@@ -17,10 +17,10 @@ defmodule Solvent.Backend.Set do
   end
 
   defimpl Solvent.EventBus do
-    def publish(%{listeners: listeners} = event_bus, type, data) do
+    def publish(%{listeners: listeners} = event_bus, event) do
       :ok = Enum.each(listeners, fn {_id, {match_type, listener}} ->
-        if type =~ match_type do
-          listener.(data)
+        if event.type =~ match_type do
+          listener.(event)
         end
       end)
 

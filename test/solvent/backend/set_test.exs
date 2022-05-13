@@ -12,7 +12,7 @@ defmodule Solvent.Backend.SetTest do
     end)
 
     test_ref = make_ref()
-    {:ok, _} = Solvent.publish(bus, "event.published", test_ref)
+    {:ok, _} = Solvent.publish(bus, "event.published", data: test_ref)
 
     assert_receive ^test_ref
   end
@@ -28,7 +28,7 @@ defmodule Solvent.Backend.SetTest do
       send test_pid, :other_handler
     end)
 
-    {:ok, _} = Solvent.publish(bus, "event.published", :event_data)
+    {:ok, _} = Solvent.publish(bus, "event.published")
 
     assert_receive :expected_handler
     refute_receive :other_handler
