@@ -7,8 +7,8 @@ defmodule Solvent.Backend.SetTest do
     {:ok, bus} = Solvent.Backend.Set.new()
     test_pid = self()
 
-    {:ok, bus} = Solvent.subscribe(bus, "ID 1", "event.published", fn data ->
-      send(test_pid, data)
+    {:ok, bus} = Solvent.subscribe(bus, "ID 1", "event.published", fn event ->
+      send(test_pid, event.data)
     end)
 
     test_ref = make_ref()
@@ -21,10 +21,10 @@ defmodule Solvent.Backend.SetTest do
     {:ok, bus} = Solvent.Backend.Set.new()
     test_pid = self()
 
-    {:ok, bus} = Solvent.subscribe(bus, "ID 1", "event.published", fn _data ->
+    {:ok, bus} = Solvent.subscribe(bus, "ID 1", "event.published", fn _event ->
       send test_pid, :expected_handler
     end)
-    {:ok, bus} = Solvent.subscribe(bus, "ID 2", "other.event.published", fn _data ->
+    {:ok, bus} = Solvent.subscribe(bus, "ID 2", "other.event.published", fn _event ->
       send test_pid, :other_handler
     end)
 

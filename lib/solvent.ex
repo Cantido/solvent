@@ -7,7 +7,13 @@ defmodule Solvent do
     Solvent.EventBus.subscribe(bus, id, match_type, fun)
   end
 
-  def publish(bus, type, data) do
-    Solvent.EventBus.publish(bus, type, data)
+  def publish(bus, type, data, opts \\ []) do
+    event = %Solvent.Event{
+      id: Keyword.get(opts, :id, make_ref()),
+      source: "Solvent",
+      type: type,
+      data: data
+    }
+    Solvent.EventBus.publish(bus, type, event)
   end
 end
