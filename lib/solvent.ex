@@ -9,11 +9,12 @@ defmodule Solvent do
 
   def publish(bus, type, opts \\ []) do
     event = %Solvent.Event{
-      id: Keyword.get(opts, :id, make_ref()),
+      id: Keyword.get(opts, :id, UUID.uuid4()),
       source: "Solvent",
       type: type,
-      data: Keyword.get(opts, :data, nil)
     }
+    |> struct!(opts)
+
     Solvent.EventBus.publish(bus, event)
   end
 end

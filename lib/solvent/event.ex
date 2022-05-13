@@ -5,6 +5,11 @@ defmodule Solvent.Event do
     source: nil,
     type: nil,
     specversion: "1.0",
-    data: nil
+    data: nil,
+    datacontenttype: nil,
+    dataschema: nil,
+    subject: nil,
+    time: nil,
+    extensions: %{}
   ]
 end
