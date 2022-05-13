@@ -10,40 +10,59 @@ defmodule Solvent.Backend.Process do
     GenServer.start_link(__MODULE__, :ok, opts)
   end
 
+  def new do
+    with {:ok, pid} <- start_link() do
+      {:ok, %__MODULE__{pid: pid}}
+    end
+  end
+
   def init(_) do
-    {:ok, MapSet.new()}
-  end
-
-  def publish(bus \\ __MODULE__, data) do
-    with :ok <- GenServer.cast(bus, {:publish, data}) do
-      {:ok, bus}
+    with {:ok, set} <- Solvent.Backend.Set.new() do
+      {:ok, set}
     end
   end
 
-  def subscribe(bus \\ __MODULE__, fun) do
-    with :ok <- GenServer.cast(bus, {:subscribe, fun}) do
-      {:ok, bus}
-    end
+  def handle_cast({:subscribe, id, fun}, bus) do
+    {:ok, bus} = Solvent.EventBus.subscribe(bus, id, fun)
+    {:noreply, bus}
   end
 
-  def handle_cast({:subscribe, fun}, state) do
-    {:noreply, MapSet.put(state, fun)}
+  def handle_cast({:publish, data}, bus) do
+    {:ok, bus} = Solvent.EventBus.publish(bus, data)
+    {:noreply, bus}
   end
 
-  def handle_cast({:publish, data}, state) do
-    :ok = Enum.each(state, fn fun ->
-      fun.(data)
-    end)
-    {:noreply, state}
+  def handle_cast({:unsubscribe, id}, bus) do
+    {:ok, bus} = Solvent.EventBus.unsubscribe(bus, id)
+    {:noreply, bus}
+  end
+
+  def handle_call({:get_listener, id}, _from, bus) do
+    {:ok, result} = Solvent.EventBus.get_listener(bus, id)
+    {:reply, result, bus}
   end
 
   defimpl Solvent.EventBus do
-    def publish(%{pid: pid}, data) do
-      Solvent.Backend.Process.publish(pid, data)
+    def publish(bus, data) do
+      with :ok <- GenServer.cast(bus.pid, {:publish, data}) do
+        {:ok, bus}
+      end
     end
 
-    def subscribe(%{pid: pid}, fun) do
-      Solvent.Backend.Process.subscribe(pid, fun)
+    def subscribe(bus, id, fun) do
+      with :ok <- GenServer.cast(bus.pid, {:subscribe, id, fun}) do
+        {:ok, bus}
+      end
+    end
+
+    def unsubscribe(bus, id) do
+      with :ok <- GenServer.cast(bus.pid, {:unsubscribe, id}) do
+        {:ok, bus}
+      end
+    end
+
+    def get_listener(bus, id) do
+      GenServer.call(bus.pid, {:get_listener, id})
     end
   end
 end

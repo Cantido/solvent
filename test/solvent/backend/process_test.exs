@@ -3,12 +3,11 @@ defmodule Solvent.Backend.ProcessTest do
   doctest Solvent.Backend.Process
 
   test "A process that subscribes to an event receives the event" do
-    {:ok, bus_pid} = Solvent.Backend.Process.start_link()
-    bus = %Solvent.Backend.Process{pid: bus_pid}
+    {:ok, bus} = Solvent.Backend.Process.new()
     test_pid = self()
 
-    {:ok, _} = Solvent.subscribe(bus, fn ref ->
-      send(test_pid, ref)
+    {:ok, bus} = Solvent.subscribe(bus, "ID 1", fn data ->
+      send(test_pid, data)
     end)
 
     test_ref = make_ref()

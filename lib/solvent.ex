@@ -3,8 +3,8 @@ defmodule Solvent do
   Documentation for `Solvent`.
   """
 
-  def subscribe(bus, fun) do
-    Solvent.EventBus.subscribe(bus, fun)
+  def subscribe(bus, id, fun) do
+    Solvent.EventBus.subscribe(bus, id, fun)
   end
 
   def publish(bus, data) do
