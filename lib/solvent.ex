@@ -3,16 +3,11 @@ defmodule Solvent do
   Documentation for `Solvent`.
   """
 
-  @doc """
-  Hello world.
+  def subscribe(bus, fun) do
+    Solvent.EventBus.subscribe(bus, fun)
+  end
 
-  ## Examples
-
-      iex> Solvent.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def publish(bus, data) do
+    Solvent.EventBus.publish(bus, data)
   end
 end
