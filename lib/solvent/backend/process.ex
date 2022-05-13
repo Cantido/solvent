@@ -22,13 +22,13 @@ defmodule Solvent.Backend.Process do
     end
   end
 
-  def handle_cast({:subscribe, id, fun}, bus) do
-    {:ok, bus} = Solvent.EventBus.subscribe(bus, id, fun)
+  def handle_cast({:subscribe, id, match_type, fun}, bus) do
+    {:ok, bus} = Solvent.EventBus.subscribe(bus, id, match_type, fun)
     {:noreply, bus}
   end
 
-  def handle_cast({:publish, data}, bus) do
-    {:ok, bus} = Solvent.EventBus.publish(bus, data)
+  def handle_cast({:publish, type, data}, bus) do
+    {:ok, bus} = Solvent.EventBus.publish(bus, type, data)
     {:noreply, bus}
   end
 
@@ -43,14 +43,14 @@ defmodule Solvent.Backend.Process do
   end
 
   defimpl Solvent.EventBus do
-    def publish(bus, data) do
-      with :ok <- GenServer.cast(bus.pid, {:publish, data}) do
+    def publish(bus, type, data) do
+      with :ok <- GenServer.cast(bus.pid, {:publish, type, data}) do
         {:ok, bus}
       end
     end
 
-    def subscribe(bus, id, fun) do
-      with :ok <- GenServer.cast(bus.pid, {:subscribe, id, fun}) do
+    def subscribe(bus, id, match_type, fun) do
+      with :ok <- GenServer.cast(bus.pid, {:subscribe, id, match_type, fun}) do
         {:ok, bus}
       end
     end

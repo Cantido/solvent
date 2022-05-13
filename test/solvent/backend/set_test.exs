@@ -7,14 +7,32 @@ defmodule Solvent.Backend.SetTest do
     {:ok, bus} = Solvent.Backend.Set.new()
     test_pid = self()
 
-    {:ok, bus} = Solvent.subscribe(bus, "ID 1", fn data ->
+    {:ok, bus} = Solvent.subscribe(bus, "ID 1", "event.published", fn data ->
       send(test_pid, data)
     end)
 
     test_ref = make_ref()
-    {:ok, _} = Solvent.publish(bus, test_ref)
+    {:ok, _} = Solvent.publish(bus, "event.published", test_ref)
 
     assert_receive ^test_ref
   end
+
+  test "only notifies listenes with an equal type" do
+    {:ok, bus} = Solvent.Backend.Set.new()
+    test_pid = self()
+
+    {:ok, bus} = Solvent.subscribe(bus, "ID 1", "event.published", fn _data ->
+      send test_pid, :expected_handler
+    end)
+    {:ok, bus} = Solvent.subscribe(bus, "ID 2", "other.event.published", fn _data ->
+      send test_pid, :other_handler
+    end)
+
+    {:ok, _} = Solvent.publish(bus, "event.published", :event_data)
+
+    assert_receive :expected_handler
+    refute_receive :other_handler
+  end
+
 end
 

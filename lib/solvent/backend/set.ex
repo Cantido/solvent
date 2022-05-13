@@ -17,17 +17,18 @@ defmodule Solvent.Backend.Set do
   end
 
   defimpl Solvent.EventBus do
-    def publish(%{listeners: listeners} = event_bus, data) do
-      :ok = Enum.each(listeners, fn {id, listener} ->
-        listener.(data)
+    def publish(%{listeners: listeners} = event_bus, type, data) do
+      :ok = Enum.each(listeners, fn {_id, {match_type, listener}} ->
+        if type =~ match_type do
+          listener.(data)
+        end
       end)
 
       {:ok, event_bus}
     end
 
-    require Logger
-    def subscribe(event_bus, id, fun) do
-      new_listeners = Map.put(event_bus.listeners, id, fun)
+    def subscribe(event_bus, id, match_type, fun) do
+      new_listeners = Map.put(event_bus.listeners, id, {match_type, fun})
 
       {:ok, %{event_bus | listeners: new_listeners}}
     end
