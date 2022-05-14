@@ -18,10 +18,12 @@ defmodule Solvent do
 
     :ok = Solvent.EventStore.insert(event)
     notifier_fun = fn {_listener_id, match_type, fun}, _acc ->
-      if event.type =~ match_type do
-        fun.(event.id)
-      end
-      nil
+      Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
+        if event.type =~ match_type do
+          fun.(event.id)
+        end
+        :ok
+      end)
     end
 
     _acc = :ets.foldl(notifier_fun, nil, :solvent_listeners)

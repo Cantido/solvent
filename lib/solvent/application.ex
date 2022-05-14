@@ -13,6 +13,7 @@ defmodule Solvent.Application do
     children = [
       # Starts a worker by calling: Solvent.Worker.start_link(arg)
       # {Solvent.Worker, arg}
+      {Task.Supervisor, name: Solvent.TaskSupervisor}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
