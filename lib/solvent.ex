@@ -3,11 +3,12 @@ defmodule Solvent do
   Documentation for `Solvent`.
   """
 
-  def subscribe(bus, id, match_type, fun) do
-    Solvent.EventBus.subscribe(bus, id, match_type, fun)
+  def subscribe(id, match_type, fun) do
+    true = :ets.insert(:solvent_listeners, {id, match_type, fun})
+    :ok
   end
 
-  def publish(bus, type, opts \\ []) do
+  def publish(type, opts \\ []) do
     event = %Solvent.Event{
       id: Keyword.get(opts, :id, UUID.uuid4()),
       source: "Solvent",
@@ -15,6 +16,15 @@ defmodule Solvent do
     }
     |> struct!(opts)
 
-    Solvent.EventBus.publish(bus, event)
+    :ok = Solvent.EventStore.insert(event)
+    notifier_fun = fn {_listener_id, match_type, fun}, _acc ->
+      if event.type =~ match_type do
+        fun.(event.id)
+      end
+      nil
+    end
+
+    _acc = :ets.foldl(notifier_fun, nil, :solvent_listeners)
+    :ok
   end
 end
