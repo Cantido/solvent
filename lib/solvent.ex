@@ -84,7 +84,7 @@ defmodule Solvent do
       [:solvent, :subscriber, :subscribing],
       %{subscriber_id: id, match_type: match_type},
       fn ->
-        true = :ets.insert(:solvent_listeners, {id, match_type, fun})
+        :ok = Solvent.SubscriberStore.insert(id, match_type, fun)
         {:ok, %{}}
       end
     )
@@ -122,12 +122,12 @@ defmodule Solvent do
     |> struct!(opts)
 
     :ok = Solvent.EventStore.insert(event)
-    notifier_fun = fn {listener_id, match_type, fun} ->
+    notifier_fun = fn {subscriber_id, match_type, fun} ->
       Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
         if event.type =~ match_type do
           :telemetry.span(
             [:solvent, :subscriber, :processing],
-            %{subscriber_id: listener_id, event_id: event.id, event_type: event.type},
+            %{subscriber_id: subscriber_id, event_id: event.id, event_type: event.type},
             fn ->
               fun.(event.id)
               {:ok, %{}}
@@ -139,8 +139,8 @@ defmodule Solvent do
     end
 
     Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-      listeners = :ets.tab2list(:solvent_listeners)
-      Task.Supervisor.async_stream(Solvent.TaskSupervisor, listeners, notifier_fun, timeout: :infinity)
+      subscribers = Solvent.SubscriberStore.to_list()
+      Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscribers, notifier_fun, timeout: :infinity)
       |> Stream.run()
     end)
 
