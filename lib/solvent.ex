@@ -122,7 +122,7 @@ defmodule Solvent do
     |> struct!(opts)
 
     :ok = Solvent.EventStore.insert(event)
-    notifier_fun = fn {listener_id, match_type, fun}, _acc ->
+    notifier_fun = fn {listener_id, match_type, fun} ->
       Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
         if event.type =~ match_type do
           :telemetry.span(
@@ -139,7 +139,9 @@ defmodule Solvent do
     end
 
     Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-      _acc = :ets.foldl(notifier_fun, nil, :solvent_listeners)
+      listeners = :ets.tab2list(:solvent_listeners)
+      Task.Supervisor.async_stream(Solvent.TaskSupervisor, listeners, notifier_fun, timeout: :infinity)
+      |> Stream.run()
     end)
 
     :ok
