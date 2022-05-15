@@ -14,6 +14,11 @@ defmodule Solvent.Subscriber do
 
   Then you only need to pass in the module name to `Solvent.subscribe/1`,
   usually done in your `application.ex`, or wherever your code starts.
+
+  ## Options
+
+    - `:id` - the ID to give the subscriber function. Defaults to the current module name.
+    - `:match_type` - a string or regex to match event types. Defaults to `~r/.*/`, which will match every event.
   """
 
   defmacro __using__(usage_opts) do
@@ -21,7 +26,6 @@ defmodule Solvent.Subscriber do
       @behaviour Solvent.Subscriber
       @solvent_listener_id unquote(Keyword.get(usage_opts, :id, to_string(__MODULE__)))
       @solvent_match_type unquote(Keyword.get(usage_opts, :match_type, ~r/.*/))
-      @solvent_auto_delete unquote(Keyword.get(usage_opts, :auto_delete, true))
 
       def subscriber_id do
         @solvent_listener_id
@@ -31,13 +35,8 @@ defmodule Solvent.Subscriber do
         @solvent_match_type
       end
 
-      def auto_delete do
-        @solvent_auto_delete
-      end
-
       defoverridable subscriber_id: 0
       defoverridable match_type: 0
-      defoverridable auto_delete: 0
     end
   end
 

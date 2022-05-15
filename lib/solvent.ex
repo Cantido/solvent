@@ -53,9 +53,6 @@ defmodule Solvent do
     match_type = Keyword.get(opts, :match_type, apply(module, :match_type, []))
     fun = fn event_id ->
       apply(module, :handle_event, [event_id])
-      if Keyword.get(opts, :auto_delete, apply(module, :auto_delete, [])) do
-        Solvent.EventStore.delete(event_id)
-      end
     end
     subscribe(id, match_type, fun)
   end
