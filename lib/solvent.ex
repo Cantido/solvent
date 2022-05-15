@@ -96,10 +96,10 @@ defmodule Solvent do
       :ok
 
       iex> Solvent.publish(
-        "io.github.cantido.documentation.read",
-        datacontenttype: "application/json",
-        data: ~s({"hello":"world"})
-      )
+      ...>   "io.github.cantido.documentation.read",
+      ...>   datacontenttype: "application/json",
+      ...>   data: ~s({"hello":"world"})
+      ...> )
       :ok
   """
   def publish(type, opts \\ []) do
