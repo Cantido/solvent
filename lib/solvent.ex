@@ -3,9 +3,13 @@ defmodule Solvent do
   Documentation for `Solvent`.
   """
 
+  def subscribe(match_type, fun) do
+    subscribe(UUID.uuid4(), match_type, fun)
+  end
+
   def subscribe(id, match_type, fun) do
     true = :ets.insert(:solvent_listeners, {id, match_type, fun})
-    :ok
+    {:ok, id}
   end
 
   def subscribe(module) when is_atom(module) do
