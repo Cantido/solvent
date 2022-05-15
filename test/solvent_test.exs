@@ -12,4 +12,11 @@ defmodule SolventTest do
 
     assert_receive :notified
   end
+
+  test "can subscribe modules" do
+    Solvent.subscribe(Solvent.MessengerHandler)
+    Solvent.publish("event.published", data: self())
+
+    assert_receive :notified
+  end
 end

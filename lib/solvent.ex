@@ -8,6 +8,15 @@ defmodule Solvent do
     :ok
   end
 
+  def subscribe(module) when is_atom(module) do
+    id = apply(module, :subscriber_id, [])
+    match_type = apply(module, :match_type, [])
+    fun = fn event_id ->
+      apply(module, :handle_event, [event_id])
+    end
+    subscribe(id, match_type, fun)
+  end
+
   def publish(type, opts \\ []) do
     event = %Solvent.Event{
       id: Keyword.get(opts, :id, UUID.uuid4()),
