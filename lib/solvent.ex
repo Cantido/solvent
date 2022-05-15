@@ -107,6 +107,7 @@ defmodule Solvent do
       id: Keyword.get(opts, :id, UUID.uuid4()),
       source: "Solvent",
       type: type,
+      time: DateTime.utc_now()
     }
     |> struct!(opts)
 
