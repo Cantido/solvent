@@ -24,4 +24,13 @@ defmodule SolventTest do
 
     assert_receive :notified
   end
+
+  test "can unsubscribe modules" do
+    sub_id = UUID.uuid4()
+    Solvent.subscribe(Solvent.MessengerHandler, id: sub_id)
+    Solvent.unsubscribe(sub_id)
+    Solvent.publish("modulesubscribe.published", data: self())
+
+    refute_receive :notified
+  end
 end

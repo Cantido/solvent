@@ -93,6 +93,13 @@ defmodule Solvent do
   end
 
   @doc """
+  Remove a subscriber.
+  """
+  def unsubscribe(id) do
+    Solvent.SubscriberStore.delete(id)
+  end
+
+  @doc """
   Publish an event to the event bus, triggering all subscriber functions.
 
   Only a type (AKA "topic") is required.

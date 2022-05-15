@@ -10,6 +10,11 @@ defmodule Solvent.SubscriberStore do
     :ok
   end
 
+  def delete(id) do
+    true = :ets.delete(@table_name, id)
+    :ok
+  end
+
   def to_list do
     :ets.tab2list(@table_name)
   end
