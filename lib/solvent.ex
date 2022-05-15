@@ -37,10 +37,29 @@ defmodule Solvent do
   """
 
   @doc """
-  Like `subscribe/3` with an auto-generated ID.
+  Subscribe to the event bus.
 
-  By default, the ID will be a version 4 UUID.
+  When the first argument is a module, the module is subscribed to the event bus,
+  and the second argument is expected to be a list of options, if it is provided at all.
+  See `Solvent.Subscriber` for details.
+
+  If the first argument is a string or regex, then the second argument must be a function,
+  and the function behaves exactly like `subscribe/3` but with an auto-generated ID.
   """
+  def subscribe(arg1, arg2 \\ [])
+
+  def subscribe(module, opts) when is_atom(module) and is_list(opts) do
+    id = Keyword.get(opts, :id, apply(module, :subscriber_id, []))
+    match_type = Keyword.get(opts, :match_type, apply(module, :match_type, []))
+    fun = fn event_id ->
+      apply(module, :handle_event, [event_id])
+      if Keyword.get(opts, :auto_delete, apply(module, :auto_delete, [])) do
+        Solvent.EventStore.delete(event_id)
+      end
+    end
+    subscribe(id, match_type, fun)
+  end
+
   def subscribe(match_type, fun) do
     subscribe(UUID.uuid4(), match_type, fun)
   end
@@ -56,7 +75,7 @@ defmodule Solvent do
 
   The ID is optional, and defaults to a version 4 UUID.
 
-      iex> Solvent.subscribe("My subscriber", "event.published", fn event_id ->
+      iex> Solvent.subscribe("My subscriber", "idsubscriber.event.published", fn event_id ->
       ...>   {:ok, event} = Solvent.EventStore.fetch(event_id)
       ...>   # Use the event, then delete it
       ...>   Solvent.EventStore.delete(event_id)
@@ -66,20 +85,6 @@ defmodule Solvent do
   def subscribe(id, match_type, fun) do
     true = :ets.insert(:solvent_listeners, {id, match_type, fun})
     {:ok, id}
-  end
-
-  @doc """
-  Subscribe a module to the event bus.
-
-  See `Solvent.Subscriber` for details.
-  """
-  def subscribe(module) when is_atom(module) do
-    id = apply(module, :subscriber_id, [])
-    match_type = apply(module, :match_type, [])
-    fun = fn event_id ->
-      apply(module, :handle_event, [event_id])
-    end
-    subscribe(id, match_type, fun)
   end
 
   @doc """

@@ -21,6 +21,7 @@ defmodule Solvent.Subscriber do
       @behaviour Solvent.Subscriber
       @solvent_listener_id unquote(Keyword.get(usage_opts, :id, to_string(__MODULE__)))
       @solvent_match_type unquote(Keyword.get(usage_opts, :match_type, ~r/.*/))
+      @solvent_auto_delete unquote(Keyword.get(usage_opts, :auto_delete, true))
 
       def subscriber_id do
         @solvent_listener_id
@@ -30,7 +31,13 @@ defmodule Solvent.Subscriber do
         @solvent_match_type
       end
 
-      defoverridable subscriber_id: 0, match_type: 0
+      def auto_delete do
+        @solvent_auto_delete
+      end
+
+      defoverridable subscriber_id: 0
+      defoverridable match_type: 0
+      defoverridable auto_delete: 0
     end
   end
 
