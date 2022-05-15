@@ -10,4 +10,9 @@ defmodule Solvent.EventStore do
     true = :ets.insert(:solvent_event_store, {event.id, event})
     :ok
   end
+
+  def delete(event_id) do
+    true = :ets.delete(:solvent_event_store, event_id)
+    :ok
+  end
 end
