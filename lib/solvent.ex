@@ -36,6 +36,8 @@ defmodule Solvent do
   See the `Solvent.Event` docs for more information on what that struct contains.
   """
 
+  require Logger
+
   @doc """
   Subscribe to the event bus.
 
@@ -51,13 +53,15 @@ defmodule Solvent do
   def subscribe(module, opts) when is_atom(module) and is_list(opts) do
     id = Keyword.get(opts, :id, apply(module, :subscriber_id, []))
     match_type = Keyword.get(opts, :match_type, apply(module, :match_type, []))
+
+    Logger.debug("Subscribing Solvent module #{module} as #{id} with match #{inspect match_type}")
     fun = fn event_id ->
       apply(module, :handle_event, [event_id])
     end
     subscribe(id, match_type, fun)
   end
 
-  def subscribe(match_type, fun) do
+  def subscribe(match_type, fun) when is_function(fun) do
     subscribe(UUID.uuid4(), match_type, fun)
   end
 
@@ -79,7 +83,7 @@ defmodule Solvent do
       ...> end)
       {:ok, "My subscriber"}
   """
-  def subscribe(id, match_type, fun) do
+  def subscribe(id, match_type, fun) when is_function(fun) do
     true = :ets.insert(:solvent_listeners, {id, match_type, fun})
     {:ok, id}
   end
@@ -114,10 +118,13 @@ defmodule Solvent do
     |> struct!(opts)
 
     :ok = Solvent.EventStore.insert(event)
-    notifier_fun = fn {_listener_id, match_type, fun}, _acc ->
+    notifier_fun = fn {listener_id, match_type, fun}, _acc ->
       Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
         if event.type =~ match_type do
+          Logger.debug("Event #{event.id} matches listener #{listener_id}")
           fun.(event.id)
+        else
+          Logger.debug("Event #{event.id} with type #{event.type} did not match listener #{listener_id} with match_type #{match_type}")
         end
         :ok
       end)

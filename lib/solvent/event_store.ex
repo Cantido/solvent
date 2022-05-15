@@ -30,4 +30,12 @@ defmodule Solvent.EventStore do
     true = :ets.delete(:solvent_event_store, event_id)
     :ok
   end
+
+  @doc """
+  Delete all events from the event store.
+  """
+  def delete_all do
+    true = :ets.delete_all_objects(:solvent_event_store)
+    :ok
+  end
 end
