@@ -35,7 +35,10 @@ defmodule Solvent do
       end)
     end
 
-    _acc = :ets.foldl(notifier_fun, nil, :solvent_listeners)
+    Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
+      _acc = :ets.foldl(notifier_fun, nil, :solvent_listeners)
+    end)
+
     :ok
   end
 end
