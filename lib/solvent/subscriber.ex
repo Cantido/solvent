@@ -2,8 +2,8 @@ defmodule Solvent.Subscriber do
   defmacro __using__(usage_opts) do
     quote do
       @behaviour Solvent.Subscriber
-      @solvent_listener_id unquote(Keyword.fetch!(usage_opts, :id))
-      @solvent_match_type unquote(Keyword.fetch!(usage_opts, :match_type))
+      @solvent_listener_id unquote(Keyword.get(usage_opts, :id, to_string(__MODULE__)))
+      @solvent_match_type unquote(Keyword.get(usage_opts, :match_type, ~r/.*/))
 
       def subscriber_id do
         @solvent_listener_id
