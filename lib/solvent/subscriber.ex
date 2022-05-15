@@ -1,4 +1,21 @@
 defmodule Solvent.Subscriber do
+  @moduledoc """
+  A module shorthand for defining subscribers.
+
+  Use this module to quickly create a module that can handle Solvent events.
+
+      defmodule MyModule do
+        use Solvent.Subscriber, match_type: ~r/myevents.*/
+
+        def handle_event(event_id) do
+          # Fetch and handle your event here
+        end
+      end
+
+  Then you only need to pass in the module name to `Solvent.subscribe/1`,
+  usually done in your `application.ex`, or wherever your code starts.
+  """
+
   defmacro __using__(usage_opts) do
     quote do
       @behaviour Solvent.Subscriber
@@ -19,5 +36,5 @@ defmodule Solvent.Subscriber do
 
   @callback subscriber_id() :: String.t()
   @callback match_type() :: String.t()
-  @callback handle_event(Solvent.Event.t()) :: any()
+  @callback handle_event(String.t()) :: any()
 end

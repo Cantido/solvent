@@ -1,4 +1,10 @@
 defmodule Solvent.Event do
+  @moduledoc """
+  The event that subscribers are waiting for.
+
+  Events in Solvent follow the [CloudEvents specification](https://github.com/cloudevents/spec),
+  and the keys in this struct match the attribute names given in the spec.
+  """
   @enforce_keys [:id, :source, :type]
   defstruct [
     id: nil,
