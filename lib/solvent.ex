@@ -10,27 +10,34 @@ defmodule Solvent do
       iex> Solvent.subscribe("My first subscriber", ~r/.*/, fn event_id ->
       ...>   {:ok, event} = Solvent.EventStore.fetch(event_id)
       ...>
-      ...>   # play with the event, and delete it when you're done
+      ...>   # play with the event, and acknowledge it when you're done
       ...>
-      ...>   Solvent.EventStore.delete(event_id)
+      ...>   Solvent.EventStore.ack(event_id, "My first subscriber")
       ...> end)
       {:ok, "My first subscriber"}
 
   It's important to observe that subscriber functions are given the _identifier_ of an event, _not_ the event itself.
+  Also, note that we call `Solvent.EventStore.ack/2` once we're done with the event,
+  so that Solvent knows it can clean up the event from the store.
+
+  > #### Tip {: .tip}
+  >
+  > Use the `Solvent.Subscriber` module to make a subscriber that automatically acknowledges events,
+  > along with lots of other nice features.
 
   Once you have a subscriber, publish an event.
   Data is optional, only a type is required.
   This can be any string.
   I would recommend the CloudEvents format, which starts with a reversed DNS name, and is dot-separated.
-  This will help avoid collisions with events you have no desire to collide with.
+  This will help avoid collisions with events from other applications.
 
-      iex> Solvent.publish("io.github.cantido.myevent.published", id: "published-event-id")
-      {:ok, "published-event-id"}
+      iex> Solvent.publish("io.github.cantido.myevent.published", id: "0b06bdb7-06a7-4df9-a825-1fd225ceea43")
+      {:ok, "0b06bdb7-06a7-4df9-a825-1fd225ceea43"}
 
   Here you can also supply data for the event with the `:data` option.
 
-      iex> Solvent.publish("io.github.cantido.myevent.published", data: "Hello, world!", id: "hello-event-id")
-      {:ok, "hello-event-id"}
+      iex> Solvent.publish("io.github.cantido.myevent.published", data: "Hello, world!", id: "d0f63676-b853-4f30-8bcf-ea10f2184556")
+      {:ok, "d0f63676-b853-4f30-8bcf-ea10f2184556"}
 
   This will be available on the `:data` key of the event object you fetch from `Solvent.EventStore`.
   See the `Solvent.Event` docs for more information on what that struct contains.
@@ -126,13 +133,7 @@ defmodule Solvent do
       {:ok, "read-docs-id"}
   """
   def publish(type, opts \\ []) do
-    event = %Solvent.Event{
-      id: Keyword.get(opts, :id, UUID.uuid4()),
-      source: "Solvent",
-      type: type,
-      time: DateTime.utc_now()
-    }
-    |> struct!(opts)
+    event = Solvent.Event.new(type, opts)
 
     notifier_fun = fn {subscriber_id, match_type, fun} ->
       Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->

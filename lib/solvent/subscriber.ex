@@ -15,6 +15,22 @@ defmodule Solvent.Subscriber do
   Then you only need to pass in the module name to `Solvent.subscribe/1`,
   usually done in your `application.ex`, or wherever your code starts.
 
+  By default, module subscribers will automatically call `Solvent.EventStore.ack/2` once `c:handle_event/1` returns.
+  To disable this feature, set the `:auto_ack` option to `false`, and then you can acknowledge the event manually.
+  This module provides an `auto_ack/1` function that is compiled with the ID of your handler,
+  so you only need to provide the event ID.
+
+      defmodule MyModule do
+        use Solvent.Subscriber,
+          match_type: ~r/myevents.*/,
+          auto_ack: false
+
+        def handle_event(event_id) do
+          # Fetch and handle your event here
+          ack_event(event_id)
+        end
+      end
+
   ## Options
 
     - `:id` - the ID to give the subscriber function. Defaults to the current module name.
@@ -50,7 +66,24 @@ defmodule Solvent.Subscriber do
     end
   end
 
+  @doc """
+  Returns the current subscriber ID.
+
+  This function is automatically created when you `use` this module,
+  but you can override it, if you need.
+  """
   @callback subscriber_id() :: String.t()
+
+  @doc """
+  Returns the value to match event types against.
+
+  This function is automatically created when you `use` this module,
+  but you can override it, if you need.
+  """
   @callback match_type() :: String.t()
+
+  @doc """
+  Performs an action when given an event ID.
+  """
   @callback handle_event(String.t()) :: any()
 end

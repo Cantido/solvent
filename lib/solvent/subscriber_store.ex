@@ -1,4 +1,6 @@
 defmodule Solvent.SubscriberStore do
+  @moduledoc false
+
   @table_name :solvent_listeners
 
   def init do

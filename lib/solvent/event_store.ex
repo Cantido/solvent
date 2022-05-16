@@ -1,6 +1,13 @@
 defmodule Solvent.EventStore do
   @moduledoc """
   ETS-based storage for `Solvent.Event` objects.
+
+  Events are stored using `insert/2`, along with an enumerable of subscriber IDs.
+  The event is then stored until all subscribers call `ack/2` to acknowledge the event,
+  after which point the event is deleted from the store.
+
+  The event store is initialized by the Solvent supervisor,
+  so no setup work is necessary to use the store.
   """
 
   require Logger
@@ -8,6 +15,7 @@ defmodule Solvent.EventStore do
   @table_name :solvent_event_store
   @ack_table :solvent_event_pending_ack
 
+  @doc false
   def init do
     :ets.new(@table_name, [:set, :public, :named_table])
     :ets.new(@ack_table, [:bag, :public, :named_table])
@@ -24,7 +32,7 @@ defmodule Solvent.EventStore do
   end
 
   @doc """
-  Insert a new event into storage.
+  Insert a new event into storage, along with all listeners that need to acknowledge it before it can be deleted.
 
   This does not activate any subscribers, use `Solvent.publish/2` for that.
   """
@@ -49,6 +57,7 @@ defmodule Solvent.EventStore do
   """
   def delete_all do
     true = :ets.delete_all_objects(@table_name)
+    true = :ets.delete_all_objects(@ack_table)
     :ok
   end
 
