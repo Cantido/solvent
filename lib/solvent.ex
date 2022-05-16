@@ -51,9 +51,12 @@ defmodule Solvent do
   def subscribe(module, opts) when is_atom(module) and is_list(opts) do
     id = Keyword.get(opts, :id, apply(module, :subscriber_id, []))
     match_type = Keyword.get(opts, :match_type, apply(module, :match_type, []))
+    auto_ack? = Keyword.get(opts, :auto_ack, apply(module, :auto_ack?, []))
     fun = fn event_id ->
       apply(module, :handle_event, [event_id])
-      Solvent.EventStore.ack(event_id, id)
+      if auto_ack? do
+        Solvent.EventStore.ack(event_id, id)
+      end
     end
     subscribe(id, match_type, fun)
   end

@@ -19,6 +19,7 @@ defmodule Solvent.Subscriber do
 
     - `:id` - the ID to give the subscriber function. Defaults to the current module name.
     - `:match_type` - a string or regex to match event types. Defaults to `~r/.*/`, which will match every event.
+    - `:auto_ack` - automatically call `Subscriber.EventStore.ack/1` after `c:handle_event/1` returns. Defaults to `true`.
   """
 
   defmacro __using__(usage_opts) do
@@ -26,6 +27,7 @@ defmodule Solvent.Subscriber do
       @behaviour Solvent.Subscriber
       @solvent_listener_id unquote(Keyword.get(usage_opts, :id, to_string(__MODULE__)))
       @solvent_match_type unquote(Keyword.get(usage_opts, :match_type, ~r/.*/))
+      @solvent_auto_ack unquote(Keyword.get(usage_opts, :auto_ack, true))
 
       def subscriber_id do
         @solvent_listener_id
@@ -33,6 +35,10 @@ defmodule Solvent.Subscriber do
 
       def match_type do
         @solvent_match_type
+      end
+
+      def auto_ack? do
+        @solvent_auto_ack
       end
 
       def ack_event(event_id) do
