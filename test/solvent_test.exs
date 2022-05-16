@@ -4,6 +4,7 @@ defmodule SolventTest do
 
   setup do
     :ets.delete_all_objects(:solvent_listeners)
+    :ets.delete_all_objects(:solvent_event_pending_ack)
     Solvent.EventStore.delete_all()
   end
 
@@ -32,5 +33,14 @@ defmodule SolventTest do
     Solvent.publish("modulesubscribe.published", data: self())
 
     refute_receive :notified
+  end
+
+  test "modules auto-ack which deletes events" do
+    Solvent.subscribe(Solvent.MessengerHandler, id: UUID.uuid4())
+    {:ok, event_id} = Solvent.publish("modulesubscribe.published", data: self())
+
+    assert_receive :notified
+    Process.sleep(100)
+    assert :error == Solvent.EventStore.fetch(event_id)
   end
 end

@@ -35,6 +35,10 @@ defmodule Solvent.Subscriber do
         @solvent_match_type
       end
 
+      def ack_event(event_id) do
+        Solvent.EventStore.ack(event_id, subscriber_id())
+      end
+
       defoverridable subscriber_id: 0
       defoverridable match_type: 0
     end

@@ -24,13 +24,13 @@ defmodule Solvent do
   I would recommend the CloudEvents format, which starts with a reversed DNS name, and is dot-separated.
   This will help avoid collisions with events you have no desire to collide with.
 
-      iex> Solvent.publish("io.github.cantido.myevent.published")
-      :ok
+      iex> Solvent.publish("io.github.cantido.myevent.published", id: "published-event-id")
+      {:ok, "published-event-id"}
 
   Here you can also supply data for the event with the `:data` option.
 
-      iex> Solvent.publish("io.github.cantido.myevent.published", data: "Hello, world!")
-      :ok
+      iex> Solvent.publish("io.github.cantido.myevent.published", data: "Hello, world!", id: "hello-event-id")
+      {:ok, "hello-event-id"}
 
   This will be available on the `:data` key of the event object you fetch from `Solvent.EventStore`.
   See the `Solvent.Event` docs for more information on what that struct contains.
@@ -53,6 +53,7 @@ defmodule Solvent do
     match_type = Keyword.get(opts, :match_type, apply(module, :match_type, []))
     fun = fn event_id ->
       apply(module, :handle_event, [event_id])
+      Solvent.EventStore.ack(event_id, id)
     end
     subscribe(id, match_type, fun)
   end
@@ -107,17 +108,19 @@ defmodule Solvent do
   See `Solvent.Event` for details on what that struct contains.
   All values given as options are inserted into the event struct.
 
+  ID values are version 4 UUIDs by default, and you don't need to provide them.
   ## Examples
 
-      iex> Solvent.publish("io.github.cantido.documentation.read")
-      :ok
+      Solvent.publish("io.github.cantido.documentation.read")
+      {:ok, "some-random-uuid"}
 
       iex> Solvent.publish(
       ...>   "io.github.cantido.documentation.read",
+      ...>   id: "read-docs-id",
       ...>   datacontenttype: "application/json",
       ...>   data: ~s({"hello":"world"})
       ...> )
-      :ok
+      {:ok, "read-docs-id"}
   """
   def publish(type, opts \\ []) do
     event = %Solvent.Event{
@@ -128,29 +131,32 @@ defmodule Solvent do
     }
     |> struct!(opts)
 
-    :ok = Solvent.EventStore.insert(event)
     notifier_fun = fn {subscriber_id, match_type, fun} ->
       Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-        if event.type =~ match_type do
-          :telemetry.span(
-            [:solvent, :subscriber, :processing],
-            %{subscriber_id: subscriber_id, event_id: event.id, event_type: event.type},
-            fn ->
-              fun.(event.id)
-              {:ok, %{}}
-            end
-          )
-        end
+        :telemetry.span(
+          [:solvent, :subscriber, :processing],
+          %{subscriber_id: subscriber_id, event_id: event.id, event_type: event.type},
+          fn ->
+            fun.(event.id)
+            {:ok, %{}}
+          end
+        )
         :ok
       end)
     end
 
     Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-      subscribers = Solvent.SubscriberStore.to_list()
+      subscribers =
+        Solvent.SubscriberStore.to_list()
+        |> Enum.filter(fn {_id, match_type, _fun} -> event.type =~ match_type end)
+
+      subscriber_ids = Enum.map(subscribers, &elem(&1, 0))
+      :ok = Solvent.EventStore.insert(event, subscriber_ids)
+
       Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscribers, notifier_fun, timeout: :infinity)
       |> Stream.run()
     end)
 
-    :ok
+    {:ok, event.id}
   end
 end

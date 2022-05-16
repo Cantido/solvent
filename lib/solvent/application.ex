@@ -7,7 +7,7 @@ defmodule Solvent.Application do
 
   @impl true
   def start(_type, _args) do
-    :ets.new(:solvent_event_store, [:set, :public, :named_table])
+    Solvent.EventStore.init()
     Solvent.SubscriberStore.init()
     children = [
       # Starts a worker by calling: Solvent.Worker.start_link(arg)
