@@ -59,12 +59,15 @@ defmodule Solvent do
     id = Keyword.get(opts, :id, apply(module, :subscriber_id, []))
     match_type = Keyword.get(opts, :match_type, apply(module, :match_type, []))
     auto_ack? = Keyword.get(opts, :auto_ack, apply(module, :auto_ack?, []))
+
     fun = fn type, event_id ->
       apply(module, :handle_event, [type, event_id])
+
       if auto_ack? do
         Solvent.EventStore.ack(event_id, id)
       end
     end
+
     subscribe(id, match_type, fun)
   end
 
@@ -145,6 +148,7 @@ defmodule Solvent do
             {:ok, %{}}
           end
         )
+
         :ok
       end)
     end
@@ -157,7 +161,9 @@ defmodule Solvent do
       subscriber_ids = Enum.map(subscribers, &elem(&1, 0))
       :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
-      Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscribers, notifier_fun, timeout: :infinity)
+      Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscribers, notifier_fun,
+        timeout: :infinity
+      )
       |> Stream.run()
     end)
 

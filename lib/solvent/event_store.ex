@@ -40,6 +40,7 @@ defmodule Solvent.EventStore do
     Enum.each(pending_ack, fn sub_id ->
       true = :ets.insert(@ack_table, {event.id, sub_id})
     end)
+
     true = :ets.insert(@table_name, {event.id, event})
     :ok
   end
