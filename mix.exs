@@ -5,7 +5,7 @@ defmodule Solvent.MixProject do
     [
       app: :solvent,
       description: "A fast, in-memory event bus",
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: "~> 1.13",
       source_url: "https://github.com/Cantido/solvent",
       package: package(),
