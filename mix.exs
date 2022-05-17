@@ -39,7 +39,7 @@ defmodule Solvent.MixProject do
     [
       {:elixir_uuid, "~> 1.2"},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
-      {:telemetry, "~> 1.0"}
+      {:telemetry, "~> 0.4 or ~> 1.0"}
     ]
   end
 end
