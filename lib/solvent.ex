@@ -7,8 +7,8 @@ defmodule Solvent do
   or subscribe a module using `subscribe/1`.
   See the docs for `Solvent.Subscriber` for more information on module subscribers.
 
-      iex> Solvent.subscribe("My first subscriber", ~r/.*/, fn event_id ->
-      ...>   {:ok, event} = Solvent.EventStore.fetch(event_id)
+      iex> Solvent.subscribe("My first subscriber", ~r/.*/, fn _type, event_id ->
+      ...>   {:ok, _event} = Solvent.EventStore.fetch(event_id)
       ...>
       ...>   # play with the event, and acknowledge it when you're done
       ...>
@@ -59,8 +59,8 @@ defmodule Solvent do
     id = Keyword.get(opts, :id, apply(module, :subscriber_id, []))
     match_type = Keyword.get(opts, :match_type, apply(module, :match_type, []))
     auto_ack? = Keyword.get(opts, :auto_ack, apply(module, :auto_ack?, []))
-    fun = fn event_id ->
-      apply(module, :handle_event, [event_id])
+    fun = fn type, event_id ->
+      apply(module, :handle_event, [type, event_id])
       if auto_ack? do
         Solvent.EventStore.ack(event_id, id)
       end
@@ -84,7 +84,7 @@ defmodule Solvent do
   The ID is optional, and defaults to a version 4 UUID.
 
       iex> Solvent.subscribe("My subscriber", "idsubscriber.event.published", fn event_id ->
-      ...>   {:ok, event} = Solvent.EventStore.fetch(event_id)
+      ...>   {:ok, _event} = Solvent.EventStore.fetch(event_id)
       ...>   # Use the event, then delete it
       ...>   Solvent.EventStore.delete(event_id)
       ...> end)
@@ -135,13 +135,13 @@ defmodule Solvent do
   def publish(type, opts \\ []) do
     event = Solvent.Event.new(type, opts)
 
-    notifier_fun = fn {subscriber_id, match_type, fun} ->
+    notifier_fun = fn {subscriber_id, _match_type, fun} ->
       Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
         :telemetry.span(
           [:solvent, :subscriber, :processing],
           %{subscriber_id: subscriber_id, event_id: event.id, event_type: event.type},
           fn ->
-            fun.(event.id)
+            fun.(event.type, event.id)
             {:ok, %{}}
           end
         )

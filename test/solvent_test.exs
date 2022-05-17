@@ -10,7 +10,7 @@ defmodule SolventTest do
 
   test "calls subscriber functions" do
     pid = self()
-    Solvent.subscribe(UUID.uuid4(), "subscriberfun.published", fn _event ->
+    Solvent.subscribe(UUID.uuid4(), "subscriberfun.published", fn _type, _event ->
       send(pid, :notified)
     end)
 

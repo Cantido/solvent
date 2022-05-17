@@ -7,7 +7,7 @@ defmodule Solvent.Subscriber do
       defmodule MyModule do
         use Solvent.Subscriber, match_type: ~r/myevents.*/
 
-        def handle_event(event_id) do
+        def handle_event(type, event_id) do
           # Fetch and handle your event here
         end
       end
@@ -15,7 +15,7 @@ defmodule Solvent.Subscriber do
   Then you only need to pass in the module name to `Solvent.subscribe/1`,
   usually done in your `application.ex`, or wherever your code starts.
 
-  By default, module subscribers will automatically call `Solvent.EventStore.ack/2` once `c:handle_event/1` returns.
+  By default, module subscribers will automatically call `Solvent.EventStore.ack/2` once `c:handle_event/2` returns.
   To disable this feature, set the `:auto_ack` option to `false`, and then you can acknowledge the event manually.
   This module provides an `auto_ack/1` function that is compiled with the ID of your handler,
   so you only need to provide the event ID.
@@ -25,7 +25,7 @@ defmodule Solvent.Subscriber do
           match_type: ~r/myevents.*/,
           auto_ack: false
 
-        def handle_event(event_id) do
+        def handle_event(type, event_id) do
           # Fetch and handle your event here
           ack_event(event_id)
         end
@@ -35,7 +35,7 @@ defmodule Solvent.Subscriber do
 
     - `:id` - the ID to give the subscriber function. Defaults to the current module name.
     - `:match_type` - a string or regex to match event types. Defaults to `~r/.*/`, which will match every event.
-    - `:auto_ack` - automatically call `Subscriber.EventStore.ack/1` after `c:handle_event/1` returns. Defaults to `true`.
+    - `:auto_ack` - automatically call `Subscriber.EventStore.ack/1` after `c:handle_event/2` returns. Defaults to `true`.
   """
 
   defmacro __using__(usage_opts) do
@@ -83,7 +83,7 @@ defmodule Solvent.Subscriber do
   @callback match_type() :: String.t()
 
   @doc """
-  Performs an action when given an event ID.
+  Performs an action when given an event type and event ID.
   """
-  @callback handle_event(String.t()) :: any()
+  @callback handle_event(String.t(), String.t()) :: any()
 end
