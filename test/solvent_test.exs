@@ -3,8 +3,7 @@ defmodule SolventTest do
   doctest Solvent
 
   setup do
-    :ets.delete_all_objects(:solvent_listeners)
-    :ets.delete_all_objects(:solvent_event_pending_ack)
+    Solvent.SubscriberStore.delete_all()
     Solvent.EventStore.delete_all()
   end
 
@@ -43,5 +42,26 @@ defmodule SolventTest do
     assert_receive :notified
     Process.sleep(100)
     assert :error == Solvent.EventStore.fetch(event_id)
+  end
+
+  test "can subscribe a function to multiple event types at once" do
+    pid = self()
+    subscriptions = [
+      "multisubscribe.first",
+      "multisubscribe.second"
+    ]
+
+    Solvent.subscribe(UUID.uuid4(), subscriptions, fn
+      "multisubscribe.first", _event -> send(pid, :notified_first)
+      "multisubscribe.second", _event -> send(pid, :notified_second)
+    end)
+
+    Solvent.publish("multisubscribe.first")
+
+    assert_receive :notified_first
+
+    Solvent.publish("multisubscribe.second")
+
+    assert_receive :notified_second
   end
 end

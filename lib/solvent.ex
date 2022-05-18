@@ -86,19 +86,25 @@ defmodule Solvent do
 
   The ID is optional, and defaults to a version 4 UUID.
 
-      iex> Solvent.subscribe("My subscriber", "idsubscriber.event.published", fn event_id ->
+      iex> Solvent.subscribe("My subscriber", "subscriber.event.published", fn event_id ->
       ...>   {:ok, _event} = Solvent.EventStore.fetch(event_id)
       ...>   # Use the event, then delete it
       ...>   Solvent.EventStore.delete(event_id)
       ...> end)
       {:ok, "My subscriber"}
+
+  The second argument, `match_types`, can be either a string or a list of strings.
   """
   def subscribe(id, match_type, fun) when is_function(fun) do
     :telemetry.span(
       [:solvent, :subscriber, :subscribing],
       %{subscriber_id: id, match_type: match_type},
       fn ->
-        :ok = Solvent.SubscriberStore.insert(id, match_type, fun)
+        List.wrap(match_type)
+        |> Enum.uniq()
+        |> Enum.each(fn match_type ->
+          :ok = Solvent.SubscriberStore.insert(id, match_type, fun)
+        end)
         {:ok, %{}}
       end
     )
@@ -137,6 +143,9 @@ defmodule Solvent do
   """
   def publish(type, opts \\ []) do
     event = Solvent.Event.new(type, opts)
+    subscribers = Solvent.SubscriberStore.for_event_type(type)
+    subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
+    :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
     notifier_fun = fn {subscriber_id, _match_type, fun} ->
       Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
@@ -154,13 +163,6 @@ defmodule Solvent do
     end
 
     Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-      subscribers =
-        Solvent.SubscriberStore.to_list()
-        |> Enum.filter(fn {_id, match_type, _fun} -> event.type =~ match_type end)
-
-      subscriber_ids = Enum.map(subscribers, &elem(&1, 0))
-      :ok = Solvent.EventStore.insert(event, subscriber_ids)
-
       Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscribers, notifier_fun,
         timeout: :infinity
       )

@@ -4,20 +4,25 @@ defmodule Solvent.SubscriberStore do
   @table_name :solvent_listeners
 
   def init do
-    :ets.new(@table_name, [:set, :public, :named_table])
+    :ets.new(@table_name, [:bag, :public, :named_table])
   end
 
   def insert(id, match_type, fun) when is_function(fun) do
-    true = :ets.insert(@table_name, {id, match_type, fun})
+    true = :ets.insert(@table_name, {match_type, id, fun})
     :ok
   end
 
   def delete(id) do
-    true = :ets.delete(@table_name, id)
+    true = :ets.match_delete(@table_name, {:_, id, :_})
     :ok
   end
 
-  def to_list do
-    :ets.tab2list(@table_name)
+  def delete_all do
+    true = :ets.delete_all_objects(@table_name)
+    :ok
+  end
+
+  def for_event_type(event_type) do
+    :ets.match_object(@table_name, {event_type, :_, :_})
   end
 end

@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Lists of event types can now be subscribed.
+
+### Changed
+
+- Regexes can no longer be subscribed. You cannot match them with matchspecs
+  in ETS arguments, so searching for subscribers will be dramatically slower
+  if I have to scan through the table matching regexes. Besides, you should
+  know exactly what events you're matching.
+
 ## [0.2.0]
 
 ### Changed

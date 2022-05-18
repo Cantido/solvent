@@ -5,7 +5,7 @@ defmodule Solvent.Subscriber do
   Use this module to quickly create a module that can handle Solvent events.
 
       defmodule MyModule do
-        use Solvent.Subscriber, match_type: ~r/myevents.*/
+        use Solvent.Subscriber, match_type: "myevent.published"
 
         def handle_event(type, event_id) do
           # Fetch and handle your event here
@@ -33,8 +33,8 @@ defmodule Solvent.Subscriber do
 
   ## Options
 
+    - `:match_type` (required) - a string or list of strings to match event types.
     - `:id` - the ID to give the subscriber function. Defaults to the current module name.
-    - `:match_type` - a string or regex to match event types. Defaults to `~r/.*/`, which will match every event.
     - `:auto_ack` - automatically call `Subscriber.EventStore.ack/1` after `c:handle_event/2` returns. Defaults to `true`.
   """
 
@@ -42,7 +42,7 @@ defmodule Solvent.Subscriber do
     quote do
       @behaviour Solvent.Subscriber
       @solvent_listener_id unquote(Keyword.get(usage_opts, :id, to_string(__MODULE__)))
-      @solvent_match_type unquote(Keyword.get(usage_opts, :match_type, ~r/.*/))
+      @solvent_match_type unquote(Keyword.fetch!(usage_opts, :match_type))
       @solvent_auto_ack unquote(Keyword.get(usage_opts, :auto_ack, true))
 
       def subscriber_id do
@@ -55,7 +55,7 @@ defmodule Solvent.Subscriber do
 
       def auto_ack? do
         @solvent_auto_ack
-      end
+     end
 
       def ack_event(event_id) do
         Solvent.EventStore.ack(event_id, subscriber_id())
