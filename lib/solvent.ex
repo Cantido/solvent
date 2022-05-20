@@ -153,6 +153,7 @@ defmodule Solvent do
           [:solvent, :subscriber, :processing],
           %{subscriber_id: subscriber_id, event_id: event.id, event_type: event.type},
           fn ->
+            Logger.metadata(subscriber_id: subscriber_id, event_id: event.id, event_type: event.type)
             fun.(event.type, event.id)
             {:ok, %{}}
           end
