@@ -43,6 +43,8 @@ defmodule Solvent do
   See the `Solvent.Event` docs for more information on what that struct contains.
   """
 
+  require Logger
+
   @doc """
   Subscribe to the event bus.
 
