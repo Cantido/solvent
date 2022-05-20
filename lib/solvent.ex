@@ -145,30 +145,34 @@ defmodule Solvent do
     event = Solvent.Event.new(type, opts)
     subscribers = Solvent.SubscriberStore.for_event_type(type)
     subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
-    :ok = Solvent.EventStore.insert(event, subscriber_ids)
+    if Enum.count(subscribers) > 0 do
+        :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
-    notifier_fun = fn {subscriber_id, _match_type, fun} ->
+      notifier_fun = fn {subscriber_id, _match_type, fun} ->
+        Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
+          :telemetry.span(
+            [:solvent, :subscriber, :processing],
+            %{subscriber_id: subscriber_id, event_id: event.id, event_type: event.type},
+            fn ->
+              Logger.metadata(subscriber_id: subscriber_id, event_id: event.id, event_type: event.type)
+              fun.(event.type, event.id)
+              {:ok, %{}}
+            end
+          )
+
+          :ok
+        end)
+      end
+
       Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-        :telemetry.span(
-          [:solvent, :subscriber, :processing],
-          %{subscriber_id: subscriber_id, event_id: event.id, event_type: event.type},
-          fn ->
-            Logger.metadata(subscriber_id: subscriber_id, event_id: event.id, event_type: event.type)
-            fun.(event.type, event.id)
-            {:ok, %{}}
-          end
+        Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscribers, notifier_fun,
+          timeout: :infinity
         )
-
-        :ok
+        |> Stream.run()
       end)
+    else
+      Logger.warn("No subscribers matched event type #{type}. Solvent will not insert the event into the event store.")
     end
-
-    Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-      Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscribers, notifier_fun,
-        timeout: :infinity
-      )
-      |> Stream.run()
-    end)
 
     {:ok, event.id}
   end
