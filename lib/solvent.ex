@@ -7,7 +7,7 @@ defmodule Solvent do
   or subscribe a module using `subscribe/1`.
   See the docs for `Solvent.Subscriber` for more information on module subscribers.
 
-      iex> Solvent.subscribe("My first subscriber", ~r/.*/, fn _type, event_id ->
+      iex> Solvent.subscribe("My first subscriber", "com.example.event.published", fn _type, event_id ->
       ...>   {:ok, _event} = Solvent.EventStore.fetch(event_id)
       ...>
       ...>   # play with the event, and acknowledge it when you're done
@@ -31,12 +31,12 @@ defmodule Solvent do
   I would recommend the CloudEvents format, which starts with a reversed DNS name, and is dot-separated.
   This will help avoid collisions with events from other applications.
 
-      iex> Solvent.publish("io.github.cantido.myevent.published", id: "0b06bdb7-06a7-4df9-a825-1fd225ceea43")
+      Solvent.publish("io.github.cantido.myevent.published")
       {:ok, "0b06bdb7-06a7-4df9-a825-1fd225ceea43"}
 
   Here you can also supply data for the event with the `:data` option.
 
-      iex> Solvent.publish("io.github.cantido.myevent.published", data: "Hello, world!", id: "d0f63676-b853-4f30-8bcf-ea10f2184556")
+      Solvent.publish("io.github.cantido.myevent.published", data: "Hello, world!")
       {:ok, "d0f63676-b853-4f30-8bcf-ea10f2184556"}
 
   This will be available on the `:data` key of the event object you fetch from `Solvent.EventStore`.
@@ -156,7 +156,11 @@ defmodule Solvent do
             [:solvent, :subscriber, :processing],
             %{subscriber_id: subscriber_id, event_id: event.id, event_type: event.type},
             fn ->
-              Logger.metadata(subscriber_id: subscriber_id, event_id: event.id, event_type: event.type)
+              Logger.metadata(
+                solvent_subscriber_id: subscriber_id,
+                solvent_event_id: event.id,
+                solvent_event_type: event.type
+              )
               fun.(event.type, event.id)
               {:ok, %{}}
             end

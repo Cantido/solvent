@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Lists of event types can now be subscribed.
+- Logger metadata is now added before subscriber functions are executed.
+  This data includes:
+    - `:solvent_event_type` - The dispatched event's type (AKA topic)
+    - `:solvent_event_id` - The dispatched event's ID
+    - `:solvent_subscriber_id` - The ID of the subscriber that is currently executing
 
 ### Changed
 
