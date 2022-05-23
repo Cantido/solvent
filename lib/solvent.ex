@@ -1,4 +1,41 @@
 defmodule Solvent do
+  use TelemetryRegistry
+
+  telemetry_event %{
+    event: [:solvent, :event, :published],
+    description: "Emitted when an event is published",
+    measurements: "%{}",
+    metadata: "%{event_id: String.t(), event_type: String.t(), subscriber_count: non_neg_integer()}"
+  }
+
+  telemetry_event %{
+    event: [:solvent, :subscriber, :processing, :start],
+    description: "Emitted when a subscriber begins processing an event",
+    measurements: "%{}",
+    metadata: "%{subscriber_id: String.t(), event_id: String.t(), event_type: String.t()}"
+  }
+
+  telemetry_event %{
+    event: [:solvent, :subscriber, :processing, :stop],
+    description: "Emitted when a subscriber finishes processing an event",
+    measurements: "%{duration: non_neg_integer()}",
+    metadata: "%{subscriber_id: String.t(), event_id: String.t(), event_type: String.t()}"
+  }
+
+  telemetry_event %{
+    event: [:solvent, :subscriber, :subscribing, :start],
+    description: "Emitted when a subscriber begins subscribing to the event stream",
+    measurements: "%{}",
+    metadata: "%{subscriber_id: String.t(), match_type: String.t()}"
+  }
+
+  telemetry_event %{
+    event: [:solvent, :subscriber, :subscribing, :stop],
+    description: "Emitted when a subscriber is finished subscribing to the event stream",
+    measurements: "%{duration: non_neg_integer()}",
+    metadata: "%{subscriber_id: String.t(), match_type: String.t()}"
+  }
+
   @moduledoc """
   Solvent is an event bus built to be fast and easy-to-use.
 
@@ -41,9 +78,15 @@ defmodule Solvent do
 
   This will be available on the `:data` key of the event object you fetch from `Solvent.EventStore`.
   See the `Solvent.Event` docs for more information on what that struct contains.
+
+  ## Telemetry
+
+  #{telemetry_docs()}
+
   """
 
   require Logger
+
 
   @doc """
   Subscribe to the event bus.
@@ -147,6 +190,13 @@ defmodule Solvent do
     event = Solvent.Event.new(type, opts)
     subscribers = Solvent.SubscriberStore.for_event_type(type)
     subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
+
+    :telemetry.execute(
+      [:solvent, :event, :published],
+      %{},
+      %{event_id: event.id, event_type: event.type, subscriber_count: Enum.count(subscribers)}
+    )
+
     if Enum.count(subscribers) > 0 do
         :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
