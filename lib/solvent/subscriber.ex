@@ -31,6 +31,9 @@ defmodule Solvent.Subscriber do
         end
       end
 
+  Using this module also imports `Solvent.Subscriber.event!/1` which unwraps the result from `Solvent.EventStore.fetch/1`
+  and raises if the event is not found.
+
   ## Options
 
     - `:match_type` (required) - a string or list of strings to match event types.
@@ -40,6 +43,8 @@ defmodule Solvent.Subscriber do
 
   defmacro __using__(usage_opts) do
     quote do
+      import Solvent.Subscriber
+
       @behaviour Solvent.Subscriber
       @solvent_listener_id unquote(Keyword.get(usage_opts, :id, to_string(__MODULE__)))
       @solvent_match_type unquote(Keyword.fetch!(usage_opts, :match_type))
@@ -86,4 +91,14 @@ defmodule Solvent.Subscriber do
   Performs an action when given an event type and event ID.
   """
   @callback handle_event(String.t(), String.t()) :: any()
+
+  @doc """
+  Unwraps the result from `Solvent.EventBus.fetch/1` and raises if the event is not found.
+  """
+  def event!(event_id) do
+    case Solvent.EventBus.fetch(event_id) do
+      {:ok, event} -> event
+      _ -> raise "Event not found for ID #{inspect event_id}"
+    end
+  end
 end
