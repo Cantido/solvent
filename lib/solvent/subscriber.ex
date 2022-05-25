@@ -93,10 +93,10 @@ defmodule Solvent.Subscriber do
   @callback handle_event(String.t(), String.t()) :: any()
 
   @doc """
-  Unwraps the result from `Solvent.EventBus.fetch/1` and raises if the event is not found.
+  Unwraps the result from `Solvent.EventStore.fetch/1` and raises if the event is not found.
   """
   def event!(event_id) do
-    case Solvent.EventBus.fetch(event_id) do
+    case Solvent.EventStore.fetch(event_id) do
       {:ok, event} -> event
       _ -> raise "Event not found for ID #{inspect event_id}"
     end
