@@ -190,13 +190,13 @@ defmodule Solvent do
   """
   def publish(event, opts \\ [])
 
-  def publish(type, opts) do
+  def publish(type, opts) when is_binary(type) do
     event = Solvent.Event.new(type, opts)
     publish(event, opts)
   end
 
   def publish(%Solvent.Event{} = event, _opts) do
-    subscribers = Solvent.SubscriberStore.for_event_type(type)
+    subscribers = Solvent.SubscriberStore.for_event_type(event.type)
     subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
 
     :telemetry.execute(
@@ -235,7 +235,7 @@ defmodule Solvent do
         |> Stream.run()
       end)
     else
-      Logger.warn("No subscribers matched event type #{type}. Solvent will not insert the event into the event store.")
+      Logger.warn("No subscribers matched event type #{event.type}. Solvent will not insert the event into the event store.")
     end
 
     {:ok, event.id}
