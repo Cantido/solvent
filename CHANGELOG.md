@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Telemetry events are now documented with `:telemetry_registry`.
+- Added `[:solvent, :event, :published]` telemetry event,
+  dispatched when an event is.
 - Lists of event types can now be subscribed.
 - Logger metadata is now added before subscriber functions are executed.
   This data includes:
