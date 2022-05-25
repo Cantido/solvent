@@ -1,8 +1,9 @@
 # Solvent
 
+[![CI](https://github.com/Cantido/solvent/actions/workflows/elixir.yml/badge.svg)](https://github.com/Cantido/solvent/actions/workflows/elixir.yml)
+[![Run in Livebook](https://livebook.dev/badge/v1/blue.svg)](https://livebook.dev/run?url=https%3A%2F%2Fgithub.com%2FCantido%2Fsolvent%2Fblob%2Fmain%2Fguides%2Fgetting-started.livemd)
+
 An event bus built for ease-of-use.
-
-
 
 ## Installation
 
