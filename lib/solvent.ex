@@ -185,9 +185,17 @@ defmodule Solvent do
       ...>   data: ~s({"hello":"world"})
       ...> )
       {:ok, "read-docs-id"}
+
+  You can also build an event yourself with `Solvent.Event.new/1` and publish it with this function.
   """
-  def publish(type, opts \\ []) do
+  def publish(event, opts \\ [])
+
+  def publish(type, opts) do
     event = Solvent.Event.new(type, opts)
+    publish(event, opts)
+  end
+
+  def publish(%Solvent.Event{} = event, _opts) do
     subscribers = Solvent.SubscriberStore.for_event_type(type)
     subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
 
