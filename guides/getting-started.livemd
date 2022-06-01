@@ -10,36 +10,45 @@ Mix.install([:solvent])
 
 Solvent is an event bus. It was designed to be extremely easy to use. There's no supervision hierarchy to set up, and no configuration required. You don't even need to `import` or `use` any modules if you don't want to.
 
-<!-- livebook:{"break_markdown":true} -->
-
-
-
 ## Basic PubSub
 
-At its core, Solvent stores and invokes function calls. Use `Solvent.subscribe/2` to subscribe a function call. The only other required value is the event type to match. The event's "type" is also known as a "topic." It just means the variety of event being published.
+At its core, Solvent stores and invokes function calls. Use `Solvent.subscribe/2` to subscribe a function call. The only other required value is the event type to match.
+
+Then, `Solvent.publish/1` will publish an event to trigger it. Running the example below in Livebook will create a subscriber that sends a message back to us, which we then receive and print. It should print "Hello, world!"
 
 ```elixir
+parent = self()
+
 {:ok, sub_id} =
   Solvent.subscribe("com.example.event.published", fn _type, _event_id ->
-    IO.puts("Hello, world!")
+    send(parent, {:greeting, "Hello, World!"})
   end)
-```
 
-This should return an `:ok` tuple containing the subscriber's ID. You don't need to keep this value unless you plan on unsubscribing later.
-
-<!-- livebook:{"break_markdown":true} -->
-
-Then, `Solvent.publish/1` will publish an event to trigger it.
-
-```elixir
 {:ok, event_id} = Solvent.publish("com.example.event.published")
+
+receive do
+  {:greeting, text} -> IO.puts(text)
+end
 ```
-
-This also returns an `:ok` tuple, this time with the event's ID, which is needed to get the event out of the event store. If you're running this via Livebook, you should see "Hello, world!" in your terminal.
-
-<!-- livebook:{"break_markdown":true} -->
 
 When an event is published, Solvent searches through all registered listener functions and invokes the functions whose types match the published event's type. This all happens in an isolated `Task`, so publishing an event is very fast. Subscriber functions themselves run inside their own `Task`, so they are completely isolated from one another.
+
+Solvent also sets some Logger metadata for every subscriber process:
+
+* `:solvent_subscriber_id` - the ID of the subscriber being executed
+* `:solvent_event_id` - the ID of the event that triggered this subscriber
+* `:solvent_event_type` - the type field of the event that triggered this subscriber
+
+To use this metadata, configure `:logger`:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+config :logger, :console,
+  metadata: [
+    :solvent_event_type
+  ]
+```
 
 ## The Event Store
 
@@ -50,6 +59,8 @@ Events are not given directly to subscriber functions. Instead, only the event's
 ```
 
 The event store also keeps track of event acknowledgements.
+
+<!-- livebook:{"branch_parent_index":2} -->
 
 ## Acknowledging an Event
 
@@ -63,13 +74,16 @@ Solvent.EventStore.ack(event_id, sub_id)
 
 Subscribing functions to the event bus is straightforward, but it can be disorganized. Solvent allows you to subscribe modules to the event bus as well, which gives you some extra tooling and useful defaults. To get started, `use` the `Solvent.Subscriber` module. You must also provide the `:match_type` option, which can be either a single event type or a list of event types.
 
+The example below is a subscriber that expects each event to contain a PID in its `:data` field, and sends a greeting to that PID.
+
 ```elixir
-defmodule MyModuleSubscriber do
+defmodule MyGreetingSubscriber do
   use Solvent.Subscriber,
-    match_type: "com.example.event.published"
+    match_type: "com.example.greeting.needed"
 
   def handle_event(_type, event_id) do
-    IO.puts("I'm responding to event #{event_id}!")
+    {:ok, event} = Solvent.EventStore.fetch(event_id)
+    send(event.data, "Hello, I'm a module subscriber!")
   end
 end
 ```
@@ -77,69 +91,57 @@ end
 Then you can subscribe this module anywhere, like your application's `start/2` function.
 
 ```elixir
-Solvent.subscribe(MyModuleSubscriber)
+Solvent.subscribe(MyGreetingSubscriber)
 ```
 
-If you run this code in Livebook, you'll notice one of the handy defaults that module subscribers provide: the module's name is provided as the subscriber ID. Module subscribers also automatically call `Solvent.EventStore.ack/2` once the `handle_event/2` function returns.
+And publish to them like normal
+
+```elixir
+{:ok, event_id} = Solvent.publish("com.example.greeting.needed", data: self())
+
+receive do
+  greeting -> IO.puts(greeting)
+end
+```
+
+Some features of module subscribers:
+
+* The function is subscribed with its module name as the subscriber ID
+* `Solvent.EventStore.ack/2` is automatically called once the `handle_event/2` function returns
 
 ## Event data and the CloudEvents spec
 
-Most events cannot be fully described by just a type. In Solvent, a type is required, but everything else is optional. Fortunately, `Solvent.publish/2` accepts a keyword list of options, one of which is `:data`.
+Events in Solvent follow the [CloudEvents specification](https://github.com/cloudevents/spec). This specification is a project of the Cloud Native Computing Foundation that aims describe event data in a common way. By adhering to this specification, Solvent events can be transmitted over any channel that has a CloudEvents binding defined for it. There are also other Elixir libraries that work with CloudEvents.
+
+<!-- livebook:{"break_markdown":true} -->
+
+A `Solvent.Event` struct contains all of the CloudEvents fields, and some are given reasonable defaults if you do not provide a value. See the [`Solvent.Event` hexdocs](https://hexdocs.pm/solvent/Solvent.Event.html) for details on these fields and their defaults.
 
 ```elixir
-Solvent.publish(
-  "com.example.event.published",
-  data: %{hello: "world"}
-)
+event = Solvent.Event.new("com.example.event.created")
 ```
 
-The `:data` key on the resulting `Solvent.Event` struct is set to this value, so subscribers can use it after they fetch the event from the event store.
+You can specify any of the CloudEvents keys when publishing an event.
 
 ```elixir
-Solvent.subscribe("data listener", "com.example.event.published", fn _type, event_id ->
-  {:ok, event} = Solvent.EventStore.fetch(event_id)
+{:ok, event_id} =
+  Solvent.publish(
+    "com.example.cloudevent.published",
+    id: "my specific ID",
+    source: "Livebook",
+    subject: "getting-started.md",
+    datacontenttype: "application/json",
+    data: ~s({"foo":"bar"}),
+    extensions: %{
+      correlationid: "a correlation ID",
+      causationid: "a causation ID"
+    }
+  )
 
-  IO.puts("Subscriber got data #{inspect(event.data)}")
-
-  Solvent.EventStore.ack(event_id, "data listener")
-end)
+{:ok, event} = Solvent.EventStore.fetch(event_id)
 ```
 
-Let's dive into the `Solvent.Event` struct and see what else is available.
-
-```elixir
-%Solvent.Event{
-  data: nil,
-  datacontenttype: nil,
-  dataschema: nil,
-  extensions: %{},
-  id: "7cd94b9a-2073-48ff-ac76-67e6632d9907",
-  source: "Solvent",
-  specversion: "1.0",
-  subject: nil,
-  time: ~U[2022-05-25 15:51:23.232504Z],
-  type: "com.example.event.published"
-}
-```
-
-Events in Solvent follow the [CloudEvents specification](https://github.com/cloudevents/spec). This specification is a project of the Cloud Native Computing Foundation that aims describe event data in a common way. By adhering to this specification, Solvent events can be transmitted over any channel that has a CloudEvents binding defined for it. There are also other Elixir libraries that work with CloudEvents. Solvent allows you to specify all of these keys when publishing an event.
-
-```elixir
-Solvent.publish(
-  "com.example.event.published",
-  id: "my specific ID",
-  source: "Livebook",
-  subject: "getting-started.md",
-  datacontenttype: "application/json",
-  data: ~s({"foo":"bar"}),
-  extensions: %{
-    correlationid: "a correlation ID",
-    causationid: "a causation ID"
-  }
-)
-```
-
-The `Solvent.Event.new/2` function has the same signature, so you can create events before publishing them. `Solvent.publish/1` accepts a `Solvent.Event` struct.
+`Solvent.publish/1` accepts a `Solvent.Event` struct, so you can create events before publishing them
 
 ```elixir
 Solvent.Event.new(
