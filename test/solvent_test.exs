@@ -64,4 +64,16 @@ defmodule SolventTest do
 
     assert_receive :notified_second
   end
+
+  test "can subscribe to :all" do
+    pid = self()
+
+    Solvent.subscribe(UUID.uuid4(), :all, fn _type, _event ->
+      send(pid, :subscribed_to_all)
+    end)
+
+    Solvent.publish("subscribetoall.published")
+
+    assert_receive :subscribed_to_all
+  end
 end

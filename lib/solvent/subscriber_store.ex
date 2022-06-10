@@ -24,5 +24,6 @@ defmodule Solvent.SubscriberStore do
 
   def for_event_type(event_type) do
     :ets.match_object(@table_name, {event_type, :_, :_})
+    ++ :ets.match_object(@table_name, {:all, :_, :_})
   end
 end
