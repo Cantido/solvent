@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- You can now subscribe to all events passing through Solvent by subscribing to the type `:all`.
 - You can now pass a `Solvent.Event` struct into `Solvent.publish/2` yourself
 - `Solvent.Event` can now be encoded to and from JSON, and implements `Jason.Encoder`
 - Telemetry events are now documented with `:telemetry_registry`.
