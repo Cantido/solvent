@@ -81,7 +81,6 @@ defmodule Solvent.EventStore do
   def ack(event_id, listener_id) do
     count_deleted = :ets.match_delete(@ack_table, {event_id, listener_id})
     count_pending = :ets.match(@ack_table, {event_id, :"$1"}) |> Enum.count()
-    count_pending_all = :ets.match(@ack_table, {:all, :"$1"}) |> Enum.count()
 
     if count_pending == 0 && count_deleted > 0 do
       Logger.debug("Event #{event_id} has been acked by all subscribers. Deleting it.")
