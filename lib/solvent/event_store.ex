@@ -23,6 +23,8 @@ defmodule Solvent.EventStore do
 
   @doc """
   Fetch an event by ID.
+
+  Returns `{:ok, event}` if the event exists, otherwise returns `:error`.
   """
   def fetch(id) do
     case :ets.lookup(@table_name, id) do
@@ -30,6 +32,17 @@ defmodule Solvent.EventStore do
       _ -> :error
     end
   end
+
+  @doc """
+  Fetches an event by ID, and raises an error if it is not in the event store.
+  """
+  def fetch!(id) do
+    case fetch(id) do
+      {:ok, event} -> event
+      :error -> raise "Event with id #{inspect id} not found"
+    end
+  end
+
 
   @doc """
   Insert a new event into storage, along with all listeners that need to acknowledge it before it can be deleted.
