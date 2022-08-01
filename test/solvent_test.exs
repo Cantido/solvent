@@ -9,14 +9,16 @@ defmodule SolventTest do
 
   test "calls subscriber functions" do
     pid = self()
+    ref = make_ref()
 
     Solvent.subscribe(UUID.uuid4(), "subscriberfun.published", fn _type, _event ->
-      send(pid, :notified)
+      send(pid, ref)
     end)
 
     Solvent.publish("subscriberfun.published")
 
-    assert_receive :notified
+    assert_receive ^ref
+    refute_receive ^ref
   end
 
   test "can subscribe modules" do
