@@ -199,6 +199,8 @@ defmodule Solvent do
     subscribers = Solvent.SubscriberStore.for_event_type(event.type)
     subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
 
+    Logger.debug("Publishing event #{event.id}, (#{event.type}). Subscribers are: #{inspect subscriber_ids, pretty: true}")
+
     :telemetry.execute(
       [:solvent, :event, :published],
       %{},
@@ -208,7 +210,7 @@ defmodule Solvent do
     if Enum.count(subscribers) > 0 do
         :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
-      notifier_fun = fn {subscriber_id, _match_type, fun} ->
+      notifier_fun = fn {_match_type, subscriber_id, fun} ->
         Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
           :telemetry.span(
             [:solvent, :subscriber, :processing],
