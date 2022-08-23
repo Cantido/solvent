@@ -11,7 +11,7 @@ defmodule SolventTest do
     pid = self()
     ref = make_ref()
 
-    Solvent.subscribe(UUID.uuid4(), "subscriberfun.published", fn _type, _event ->
+    Solvent.subscribe(Uniq.UUID.uuid7(), "subscriberfun.published", fn _type, _event ->
       send(pid, ref)
     end)
 
@@ -22,14 +22,14 @@ defmodule SolventTest do
   end
 
   test "can subscribe modules" do
-    Solvent.subscribe(Solvent.MessengerHandler, id: UUID.uuid4())
+    Solvent.subscribe(Solvent.MessengerHandler, id: Uniq.UUID.uuid7())
     Solvent.publish("modulesubscribe.published", data: self())
 
     assert_receive :notified
   end
 
   test "can unsubscribe modules" do
-    sub_id = UUID.uuid4()
+    sub_id = Uniq.UUID.uuid7()
     Solvent.subscribe(Solvent.MessengerHandler, id: sub_id)
     Solvent.unsubscribe(sub_id)
     Solvent.publish("modulesubscribe.published", data: self())
@@ -38,7 +38,7 @@ defmodule SolventTest do
   end
 
   test "modules auto-ack which deletes events" do
-    Solvent.subscribe(Solvent.MessengerHandler, id: UUID.uuid4())
+    Solvent.subscribe(Solvent.MessengerHandler, id: Uniq.UUID.uuid7())
     {:ok, event_id} = Solvent.publish("modulesubscribe.published", data: self())
 
     assert_receive :notified
@@ -53,7 +53,7 @@ defmodule SolventTest do
       "multisubscribe.second"
     ]
 
-    Solvent.subscribe(UUID.uuid4(), subscriptions, fn
+    Solvent.subscribe(Uniq.UUID.uuid7(), subscriptions, fn
       "multisubscribe.first", _event -> send(pid, :notified_first)
       "multisubscribe.second", _event -> send(pid, :notified_second)
     end)
@@ -70,7 +70,7 @@ defmodule SolventTest do
   test "can subscribe to :all" do
     pid = self()
 
-    Solvent.subscribe(UUID.uuid4(), :all, fn _type, _event ->
+    Solvent.subscribe(Uniq.UUID.uuid7(), :all, fn _type, _event ->
       send(pid, :subscribed_to_all)
     end)
 

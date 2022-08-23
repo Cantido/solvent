@@ -117,7 +117,7 @@ defmodule Solvent do
   end
 
   def subscribe(match_type, fun) when is_function(fun) do
-    subscribe(UUID.uuid4(), match_type, fun)
+    subscribe(Uniq.UUID.uuid7(), match_type, fun)
   end
 
   @doc """

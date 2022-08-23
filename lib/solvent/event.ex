@@ -51,7 +51,7 @@ defmodule Solvent.Event do
   """
   def new(type, opts \\ []) do
     %__MODULE__{
-      id: UUID.uuid4(),
+      id: Uniq.UUID.uuid7(),
       source: "Solvent",
       type: type,
       time: DateTime.utc_now()
