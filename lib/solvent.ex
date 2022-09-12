@@ -5,21 +5,21 @@ defmodule Solvent do
     event: [:solvent, :event, :published],
     description: "Emitted when an event is published",
     measurements: "%{}",
-    metadata: "%{event_id: String.t(), event_type: String.t(), subscriber_count: non_neg_integer()}"
+    metadata: "%{event_source: String.t(), event_id: String.t(), event_type: String.t(), subscriber_count: non_neg_integer()}"
   }
 
   telemetry_event %{
     event: [:solvent, :subscriber, :processing, :start],
     description: "Emitted when a subscriber begins processing an event",
     measurements: "%{}",
-    metadata: "%{subscriber_id: String.t(), event_id: String.t(), event_type: String.t()}"
+    metadata: "%{subscriber_id: String.t(), event_source: String.t(), event_id: String.t(), event_type: String.t()}"
   }
 
   telemetry_event %{
     event: [:solvent, :subscriber, :processing, :stop],
     description: "Emitted when a subscriber finishes processing an event",
     measurements: "%{duration: non_neg_integer()}",
-    metadata: "%{subscriber_id: String.t(), event_id: String.t(), event_type: String.t()}"
+    metadata: "%{subscriber_id: String.t(), event_source: String.t(), event_id: String.t(), event_type: String.t()}"
   }
 
   telemetry_event %{
@@ -204,7 +204,7 @@ defmodule Solvent do
     :telemetry.execute(
       [:solvent, :event, :published],
       %{},
-      %{event_id: event.id, event_type: event.type, subscriber_count: Enum.count(subscribers)}
+      %{event_source: event.source, event_id: event.id, event_type: event.type, subscriber_count: Enum.count(subscribers)}
     )
 
     if Enum.count(subscribers) > 0 do
@@ -214,14 +214,14 @@ defmodule Solvent do
         Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
           :telemetry.span(
             [:solvent, :subscriber, :processing],
-            %{subscriber_id: subscriber_id, event_id: event.id, event_type: event.type},
+            %{subscriber_id: subscriber_id, event_source: event.source, event_id: event.id, event_type: event.type},
             fn ->
               Logger.metadata(
                 solvent_subscriber_id: subscriber_id,
                 solvent_event_id: event.id,
                 solvent_event_type: event.type
               )
-              fun.(event.type, event.id)
+              fun.(event.type, {event.source, event.id})
               {:ok, %{}}
             end
           )

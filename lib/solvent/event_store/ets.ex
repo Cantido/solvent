@@ -25,7 +25,7 @@ defmodule Solvent.EventStore.ETS do
   end
 
   @doc """
-  Fetch an event by ID.
+  Fetch an event by `{source, id}` tuple.
 
   Returns `{:ok, event}` if the event exists, otherwise returns `:error`.
   """
@@ -38,7 +38,7 @@ defmodule Solvent.EventStore.ETS do
   end
 
   @doc """
-  Fetches an event by ID, and raises an error if it is not in the event store.
+  Fetches an event by `{source, id}` tuple, and raises an error if it is not in the event store.
   """
   @impl true
   def fetch!(id) do
@@ -57,10 +57,10 @@ defmodule Solvent.EventStore.ETS do
   @impl true
   def insert(event, pending_ack) do
     Enum.each(pending_ack, fn sub_id ->
-      true = :ets.insert(@ack_table, {event.id, sub_id})
+      true = :ets.insert(@ack_table, {{event.source, event.id}, sub_id})
     end)
 
-    true = :ets.insert(@table_name, {event.id, event})
+    true = :ets.insert(@table_name, {{event.source, event.id}, event})
     :ok
   end
 
@@ -68,8 +68,8 @@ defmodule Solvent.EventStore.ETS do
   Remove an event from storage.
   """
   @impl true
-  def delete(event_id) do
-    true = :ets.delete(@table_name, event_id)
+  def delete({event_source, event_id}) do
+    true = :ets.delete(@table_name, {event_source, event_id})
     :ok
   end
 
@@ -87,12 +87,12 @@ defmodule Solvent.EventStore.ETS do
   Acknowledge that a listener has finished processing the event.
   """
   @impl true
-  def ack(event_id, listener_id) do
-    count_deleted = :ets.match_delete(@ack_table, {event_id, listener_id})
+  def ack({event_source, event_id}, listener_id) do
+    count_deleted = :ets.match_delete(@ack_table, {{event_source, event_id}, listener_id})
     count_pending = :ets.match(@ack_table, {event_id, :"$1"}) |> Enum.count()
 
     if count_pending == 0 && count_deleted > 0 do
-      Logger.debug("Event #{event_id} has been acked by all subscribers. Deleting it.")
+      Logger.debug("Event #{inspect {event_source, event_id}} has been acked by all subscribers. Deleting it.")
       delete(event_id)
     end
 
