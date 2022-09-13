@@ -11,7 +11,7 @@ defmodule SolventTest do
     pid = self()
     ref = make_ref()
 
-    Solvent.subscribe(Uniq.UUID.uuid7(), "subscriberfun.published", fn _type, _event ->
+    Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscriberfun.published"]], fn _type, _event ->
       send(pid, ref)
     end)
 
@@ -48,12 +48,12 @@ defmodule SolventTest do
 
   test "can subscribe a function to multiple event types at once" do
     pid = self()
-    subscriptions = [
-      "multisubscribe.first",
-      "multisubscribe.second"
-    ]
+    filter = [any: [
+      [exact: [type: "multisubscribe.first"]],
+      [exact: [type: "multisubscribe.second"]]
+    ]]
 
-    Solvent.subscribe(Uniq.UUID.uuid7(), subscriptions, fn
+    Solvent.subscribe(Uniq.UUID.uuid7(), filter, fn
       "multisubscribe.first", _event -> send(pid, :notified_first)
       "multisubscribe.second", _event -> send(pid, :notified_second)
     end)
@@ -65,17 +65,5 @@ defmodule SolventTest do
     Solvent.publish("multisubscribe.second")
 
     assert_receive :notified_second
-  end
-
-  test "can subscribe to :all" do
-    pid = self()
-
-    Solvent.subscribe(Uniq.UUID.uuid7(), :all, fn _type, _event ->
-      send(pid, :subscribed_to_all)
-    end)
-
-    Solvent.publish("subscribetoall.published")
-
-    assert_receive :subscribed_to_all
   end
 end

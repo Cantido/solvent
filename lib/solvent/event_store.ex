@@ -45,8 +45,8 @@ defmodule Solvent.EventStore do
   end
 
   @impl true
-  def ack(event_id, listener_id) do
-    apply(store(), :ack, [event_id, listener_id])
+  def ack({event_source, event_id}, listener_id) do
+    apply(store(), :ack, [{event_source, event_id}, listener_id])
   end
 
   defp store do

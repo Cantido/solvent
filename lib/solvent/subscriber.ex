@@ -5,7 +5,7 @@ defmodule Solvent.Subscriber do
   Use this module to quickly create a module that can handle Solvent events.
 
       defmodule MyModule do
-        use Solvent.Subscriber, match_type: "myevent.published"
+        use Solvent.Subscriber, filter: [exact: [type: "myevent.published"]]
 
         def handle_event(type, event_id) do
           # Fetch and handle your event here
@@ -22,7 +22,7 @@ defmodule Solvent.Subscriber do
 
       defmodule MyModule do
         use Solvent.Subscriber,
-          match_type: ~r/myevents.*/,
+          filter: [prefix: [type: "myevents."]],
           auto_ack: false
 
         def handle_event(type, event_id) do
@@ -36,7 +36,7 @@ defmodule Solvent.Subscriber do
 
   ## Options
 
-    - `:match_type` (required) - a string or list of strings to match event types.
+    - `:filter` (required) - the filter expression to match events against
     - `:id` - the ID to give the subscriber function. Defaults to the current module name.
     - `:auto_ack` - automatically call `Subscriber.EventStore.ack/1` after `c:handle_event/2` returns. Defaults to `true`.
   """
@@ -47,15 +47,15 @@ defmodule Solvent.Subscriber do
 
       @behaviour Solvent.Subscriber
       @solvent_listener_id unquote(Keyword.get(usage_opts, :id, to_string(__MODULE__)))
-      @solvent_match_type unquote(Keyword.fetch!(usage_opts, :match_type))
+      @solvent_filter unquote(Keyword.fetch!(usage_opts, :filter))
       @solvent_auto_ack unquote(Keyword.get(usage_opts, :auto_ack, true))
 
       def subscriber_id do
         @solvent_listener_id
       end
 
-      def match_type do
-        @solvent_match_type
+      def filter do
+        @solvent_filter
       end
 
       def auto_ack? do
@@ -67,7 +67,6 @@ defmodule Solvent.Subscriber do
       end
 
       defoverridable subscriber_id: 0
-      defoverridable match_type: 0
     end
   end
 
@@ -80,12 +79,12 @@ defmodule Solvent.Subscriber do
   @callback subscriber_id() :: String.t()
 
   @doc """
-  Returns the value to match event types against.
+  Returns the filter to match events against.
 
   This function is automatically created when you `use` this module,
   but you can override it, if you need.
   """
-  @callback match_type() :: String.t()
+  @callback filter() :: String.t()
 
   @doc """
   Performs an action when given an event type and event ID.

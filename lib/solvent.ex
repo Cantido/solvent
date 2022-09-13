@@ -26,14 +26,14 @@ defmodule Solvent do
     event: [:solvent, :subscriber, :subscribing, :start],
     description: "Emitted when a subscriber begins subscribing to the event stream",
     measurements: "%{}",
-    metadata: "%{subscriber_id: String.t(), match_type: String.t()}"
+    metadata: "%{subscriber_id: String.t(), filter: String.t()}"
   }
 
   telemetry_event %{
     event: [:solvent, :subscriber, :subscribing, :stop],
     description: "Emitted when a subscriber is finished subscribing to the event stream",
     measurements: "%{duration: non_neg_integer()}",
-    metadata: "%{subscriber_id: String.t(), match_type: String.t()}"
+    metadata: "%{subscriber_id: String.t(), filter: String.t()}"
   }
 
   @moduledoc """
@@ -44,7 +44,7 @@ defmodule Solvent do
   or subscribe a module using `subscribe/1`.
   See the docs for `Solvent.Subscriber` for more information on module subscribers.
 
-      iex> Solvent.subscribe("My first subscriber", "com.example.event.published", fn _type, event_id ->
+      iex> Solvent.subscribe("My first subscriber", [exact: [type: "com.example.event.published"]], fn _type, event_id ->
       ...>   {:ok, _event} = Solvent.EventStore.fetch(event_id)
       ...>
       ...>   # play with the event, and acknowledge it when you're done
@@ -102,7 +102,7 @@ defmodule Solvent do
 
   def subscribe(module, opts) when is_atom(module) and is_list(opts) do
     id = Keyword.get(opts, :id, apply(module, :subscriber_id, []))
-    match_type = Keyword.get(opts, :match_type, apply(module, :match_type, []))
+    filter = Keyword.get(opts, :filter, apply(module, :filter, []))
     auto_ack? = Keyword.get(opts, :auto_ack, apply(module, :auto_ack?, []))
 
     fun = fn type, event_id ->
@@ -113,43 +113,38 @@ defmodule Solvent do
       end
     end
 
-    subscribe(id, match_type, fun)
+    subscribe(id, filter, fun)
   end
 
-  def subscribe(match_type, fun) when is_function(fun) do
-    subscribe(Uniq.UUID.uuid7(), match_type, fun)
+  def subscribe(filter, fun) when is_function(fun) do
+    subscribe(Uniq.UUID.uuid7(), filter, fun)
   end
 
   @doc """
   Execute a function when an event is published.
 
-  The `match_type` argument can be either a string or a regular expression.
-  It is matched with an event's type using the `Kernel.=~/2` operator.
+  The `filter` argument is a keyword list of Cloudevents filters.
 
   The function argument will be given the ID of the event.
   You must fetch the event from `Solvent.EventStore` if you wish to use it.
 
   The ID is optional, and defaults to a version 4 UUID.
 
-      iex> Solvent.subscribe("My subscriber", "subscriber.event.published", fn event_id ->
+      iex> Solvent.subscribe("My subscriber", [exact: [type: "subscriber.event.published"]], fn event_id ->
       ...>   {:ok, _event} = Solvent.EventStore.fetch(event_id)
       ...>   # Use the event, then delete it
       ...>   Solvent.EventStore.delete(event_id)
       ...> end)
       {:ok, "My subscriber"}
 
-  The second argument, `match_types`, can be either a string or a list of strings.
+  The second argument, `filter`, must be a filter expression.
   """
-  def subscribe(id, match_type, fun) when is_function(fun) do
+  def subscribe(id, filter, fun) when is_function(fun) do
     :telemetry.span(
       [:solvent, :subscriber, :subscribing],
-      %{subscriber_id: id, match_type: match_type},
+      %{subscriber_id: id, filter: filter},
       fn ->
-        List.wrap(match_type)
-        |> Enum.uniq()
-        |> Enum.each(fn match_type ->
-          :ok = Solvent.SubscriberStore.insert(id, match_type, fun)
-        end)
+        :ok = Solvent.SubscriberStore.insert(id, build_filter(filter), fun)
         {:ok, %{}}
       end
     )
@@ -181,10 +176,11 @@ defmodule Solvent do
       iex> Solvent.publish(
       ...>   "io.github.cantido.documentation.read",
       ...>   id: "read-docs-id",
+      ...>   source: "myapp",
       ...>   datacontenttype: "application/json",
       ...>   data: ~s({"hello":"world"})
       ...> )
-      {:ok, "read-docs-id"}
+      {:ok, {"myapp", "read-docs-id"}}
 
   You can also build an event yourself with `Solvent.Event.new/1` and publish it with this function.
   """
@@ -196,7 +192,7 @@ defmodule Solvent do
   end
 
   def publish(%Solvent.Event{} = event, _opts) do
-    subscribers = Solvent.SubscriberStore.for_event_type(event.type)
+    subscribers = Solvent.SubscriberStore.listeners_for(event)
     subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
 
     Logger.debug("Publishing event #{event.id}, (#{event.type}). Subscribers are: #{inspect subscriber_ids, pretty: true}")
@@ -210,7 +206,7 @@ defmodule Solvent do
     if Enum.count(subscribers) > 0 do
         :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
-      notifier_fun = fn {_match_type, subscriber_id, fun} ->
+      notifier_fun = fn {subscriber_id, _filter, fun} ->
         Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
           :telemetry.span(
             [:solvent, :subscriber, :processing],
@@ -218,6 +214,7 @@ defmodule Solvent do
             fn ->
               Logger.metadata(
                 solvent_subscriber_id: subscriber_id,
+                solvent_event_source: event.source,
                 solvent_event_id: event.id,
                 solvent_event_type: event.type
               )
@@ -240,6 +237,22 @@ defmodule Solvent do
       Logger.warn("No subscribers matched event type #{event.type}. Solvent will not insert the event into the event store.")
     end
 
-    {:ok, event.id}
+    {:ok, {event.source, event.id}}
+  end
+
+  defp build_filter([exact: props]), do: %Solvent.Filter.Exact{properties: props}
+  defp build_filter([prefix: props]), do: %Solvent.Filter.Prefix{properties: props}
+  defp build_filter([suffix: props]), do: %Solvent.Filter.Suffix{properties: props}
+
+  defp build_filter([any: subs]) do
+    %Solvent.Filter.Any{subfilters: Enum.map(subs, &build_filter/1)}
+  end
+
+  defp build_filter([all: subs]) do
+    %Solvent.Filter.All{subfilters: Enum.map(subs, &build_filter/1)}
+  end
+
+  defp build_filter([not: subfilter]) do
+    %Solvent.Filter.Not{subfilter: build_filter(subfilter)}
   end
 end

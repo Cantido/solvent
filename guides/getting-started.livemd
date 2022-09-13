@@ -12,7 +12,7 @@ Solvent is an event bus. It was designed to be extremely easy to use. There's no
 
 ## Basic PubSub
 
-At its core, Solvent stores and invokes function calls. Use `Solvent.subscribe/2` to subscribe a function call. The only other required value is the event type to match.
+At its core, Solvent stores and invokes function calls. Use `Solvent.subscribe/2` to subscribe a function call. The only other required value is a filter expression.
 
 Then, `Solvent.publish/1` will publish an event to trigger it. Running the example below in Livebook will create a subscriber that sends a message back to us, which we then receive and print. It should print "Hello, world!"
 
@@ -20,7 +20,7 @@ Then, `Solvent.publish/1` will publish an event to trigger it. Running the examp
 parent = self()
 
 {:ok, sub_id} =
-  Solvent.subscribe("com.example.event.published", fn _type, _event_id ->
+  Solvent.subscribe([exact: [type: "com.example.event.published"]], fn _type, _event_id ->
     send(parent, {:greeting, "Hello, World!"})
   end)
 
@@ -31,11 +31,12 @@ receive do
 end
 ```
 
-When an event is published, Solvent searches through all registered listener functions and invokes the functions whose types match the published event's type. This all happens in an isolated `Task`, so publishing an event is very fast. Subscriber functions themselves run inside their own `Task`, so they are completely isolated from one another.
+When an event is published, Solvent searches through all registered listener functions and invokes the functions with filters that match the event. This all happens in an isolated `Task`, so publishing an event is very fast. Subscriber functions themselves run inside their own `Task`, so they are completely isolated from one another.
 
 Solvent also sets some Logger metadata for every subscriber process:
 
 * `:solvent_subscriber_id` - the ID of the subscriber being executed
+* `:solvent_event_source` - the source of the event that triggered this subscriber
 * `:solvent_event_id` - the ID of the event that triggered this subscriber
 * `:solvent_event_type` - the type field of the event that triggered this subscriber
 
@@ -79,7 +80,7 @@ The example below is a subscriber that expects each event to contain a PID in it
 ```elixir
 defmodule MyGreetingSubscriber do
   use Solvent.Subscriber,
-    match_type: "com.example.greeting.needed"
+    filter: [exact: [type: "com.example.greeting.needed"]]
 
   def handle_event(_type, event_id) do
     {:ok, event} = Solvent.EventStore.fetch(event_id)

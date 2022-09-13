@@ -1,7 +1,7 @@
 defmodule Solvent.MessengerHandler do
   use Solvent.Subscriber,
     id: "messenger subscriber",
-    match_type: "modulesubscribe.published"
+    filter: [exact: [type: "modulesubscribe.published"]]
 
   require Logger
 

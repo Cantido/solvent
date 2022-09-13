@@ -93,7 +93,7 @@ defmodule Solvent.EventStore.ETS do
 
     if count_pending == 0 && count_deleted > 0 do
       Logger.debug("Event #{inspect {event_source, event_id}} has been acked by all subscribers. Deleting it.")
-      delete(event_id)
+      delete({event_source, event_id})
     end
 
     :ok
