@@ -26,10 +26,13 @@ be found at <https://hexdocs.pm/solvent>.
 
 Create an event handler by using the `Solvent.Subscriber` module,
 and implement its `handle_event/1` callback.
+Provide a filter matching the [CloudEvents subscription filter spec](https://github.com/cloudevents/spec/blob/main/subscriptions/spec.md#324-filters).
+
 
 ```elixir
 defmodule MySubscriber do
-  use Solvent.Subscriber
+  use Solvent.Subscriber,
+    filter: [exact: [type: "com.myevent.published]]
 
   @impl true
   def handle_event(_event_id) do

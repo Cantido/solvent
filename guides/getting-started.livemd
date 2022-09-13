@@ -50,6 +50,27 @@ config :logger, :console,
     :solvent_event_type
   ]
 ```
+## Filter Expressions
+
+Solvent matches events using [CloudEvents subscription filters](https://github.com/cloudevents/spec/blob/main/subscriptions/spec.md#324-filters).
+When translated to Elixir, these filter expressions are just keyword lists, and can be nested.
+A filter expression starts as a keyword list of the filter dialect with a list of filter properties, like this:
+
+```elixir
+[filter_dialect: [filter_property_1: "value 1", filter_property_2: "value 2"]]
+```
+
+The filter you may find yourself using the most is the `exact` filter, which matches all given properties to an event's attributes.
+For example, this filter will only return events that have a `type` value of `"com.example.event"` and a `source` value of `"myapp"`:
+
+```elixir
+[exact: [type: "com.example.event", source: "myapp"]]
+```
+
+Two other filters take a list of event properties: `prefix`, which selects events whose values start with a certain string, and `suffix`, which selects events whose values end with a certain string.
+
+See the [CloudEvents subscription filter spec](https://github.com/cloudevents/spec/blob/main/subscriptions/spec.md#324-filters) for details on all possible filters.
+Note that Solvent does not yet support the `sql` filter dialect.
 
 ## The Event Store
 

@@ -62,6 +62,8 @@ defmodule Solvent do
   > Use the `Solvent.Subscriber` module to make a subscriber that automatically acknowledges events,
   > along with lots of other nice features.
 
+  The `filter` argument must be a filter expression. See `Loom.Filter` for documentation on filter expressions.
+
   Once you have a subscriber, publish an event.
   Data is optional, only a type is required.
   This can be any string.
