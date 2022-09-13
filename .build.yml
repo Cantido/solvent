@@ -1,0 +1,13 @@
+image: archlinux
+packages:
+  - docker
+sources:
+  - https://git.sr.ht/~cosmicrose/solvent
+tasks:
+  - setup: |
+      sudo systemctl start docker
+      sudo curl -L https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 -o /usr/local/bin/earthly
+      sudo chmod a+x /usr/local/bin/earthly
+  - build: |
+      cd solvent
+      sudo /usr/local/bin/earthly --ci +all
