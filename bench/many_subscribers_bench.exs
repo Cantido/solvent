@@ -6,17 +6,18 @@ defmodule Solvent.ManySubscribersBench do
   setup_all do
     :ok = Logger.put_application_level(:solvent, :error)
     Application.ensure_all_started(:solvent)
-  end
 
-  bench "insert event with many listeners", [listeners: gen_listeners()] do
-    Solvent.publish("com.example.listened.event", source: "benchmark")
-    :ok
-  end
+    Solvent.EventStore.delete_all()
 
-  defp gen_listeners do
     Enum.each(1..@num_listeners, fn _ ->
       Solvent.subscribe(gen_filter(), fn _, _ -> Process.sleep(500) end)
     end)
+    {:ok, nil}
+  end
+
+  bench "insert event with many listeners" do
+    Solvent.publish("com.example.listened.event", source: "benchmark")
+    :ok
   end
 
   defp gen_filter do
