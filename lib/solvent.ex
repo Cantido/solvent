@@ -194,50 +194,50 @@ defmodule Solvent do
   end
 
   def publish(%Solvent.Event{} = event, _opts) do
-    subscribers = Solvent.SubscriberStore.listeners_for(event)
-    subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
+    Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
+      subscribers = Solvent.SubscriberStore.listeners_for(event)
+      subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
 
-    Logger.debug("Publishing event #{event.id}, (#{event.type}). Subscribers are: #{inspect subscriber_ids, pretty: true}")
+      Logger.debug("Publishing event #{event.id}, (#{event.type}). Subscribers are: #{inspect subscriber_ids, pretty: true}")
 
-    :telemetry.execute(
-      [:solvent, :event, :published],
-      %{},
-      %{event_source: event.source, event_id: event.id, event_type: event.type, subscriber_count: Enum.count(subscribers)}
-    )
+      :telemetry.execute(
+        [:solvent, :event, :published],
+        %{},
+        %{event_source: event.source, event_id: event.id, event_type: event.type, subscriber_count: Enum.count(subscribers)}
+      )
 
-    if Enum.count(subscribers) > 0 do
-        :ok = Solvent.EventStore.insert(event, subscriber_ids)
+      if Enum.count(subscribers) > 0 do
+          :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
-      notifier_fun = fn {subscriber_id, _filter, fun} ->
-        Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-          :telemetry.span(
-            [:solvent, :subscriber, :processing],
-            %{subscriber_id: subscriber_id, event_source: event.source, event_id: event.id, event_type: event.type},
-            fn ->
-              Logger.metadata(
-                solvent_subscriber_id: subscriber_id,
-                solvent_event_source: event.source,
-                solvent_event_id: event.id,
-                solvent_event_type: event.type
-              )
-              fun.(event.type, {event.source, event.id})
-              {:ok, %{}}
-            end
-          )
+        notifier_fun = fn {subscriber_id, _filter, fun} ->
+          Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
+            :telemetry.span(
+              [:solvent, :subscriber, :processing],
+              %{subscriber_id: subscriber_id, event_source: event.source, event_id: event.id, event_type: event.type},
+              fn ->
+                Logger.metadata(
+                  solvent_subscriber_id: subscriber_id,
+                  solvent_event_source: event.source,
+                  solvent_event_id: event.id,
+                  solvent_event_type: event.type
+                )
+                fun.(event.type, {event.source, event.id})
+                {:ok, %{}}
+              end
+            )
 
-          :ok
-        end)
-      end
+            :ok
+          end)
+        end
 
-      Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
         Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscribers, notifier_fun,
           timeout: :infinity
         )
         |> Stream.run()
-      end)
-    else
-      Logger.warn("No subscribers matched event type #{event.type}. Solvent will not insert the event into the event store.")
-    end
+      else
+        Logger.warn("No subscribers matched event type #{event.type}. Solvent will not insert the event into the event store.")
+      end
+    end)
 
     {:ok, {event.source, event.id}}
   end
