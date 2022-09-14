@@ -242,19 +242,19 @@ defmodule Solvent do
     {:ok, {event.source, event.id}}
   end
 
-  defp build_filter([exact: props]), do: %Solvent.Filter.Exact{properties: props}
-  defp build_filter([prefix: props]), do: %Solvent.Filter.Prefix{properties: props}
-  defp build_filter([suffix: props]), do: %Solvent.Filter.Suffix{properties: props}
+  def build_filter([exact: props]), do: %Solvent.Filter.Exact{properties: props}
+  def build_filter([prefix: props]), do: %Solvent.Filter.Prefix{properties: props}
+  def build_filter([suffix: props]), do: %Solvent.Filter.Suffix{properties: props}
 
-  defp build_filter([any: subs]) do
+  def build_filter([any: subs]) do
     %Solvent.Filter.Any{subfilters: Enum.map(subs, &build_filter/1)}
   end
 
-  defp build_filter([all: subs]) do
+  def build_filter([all: subs]) do
     %Solvent.Filter.All{subfilters: Enum.map(subs, &build_filter/1)}
   end
 
-  defp build_filter([not: subfilter]) do
+  def build_filter([not: subfilter]) do
     %Solvent.Filter.Not{subfilter: build_filter(subfilter)}
   end
 end

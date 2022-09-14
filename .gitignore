@@ -24,3 +24,5 @@ solvent-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+/bench/snapshots
