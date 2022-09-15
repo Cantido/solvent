@@ -29,6 +29,8 @@ and making the library better follow the CloudEvents spec.
 ### Changed
 
 - *Breaking change*: The type matching argument is now required to be a more complex filter argument.
+  The argument can either be keyword list filter expression (see the `Solvent.Filter` HexDocs),
+  or it can be any struct implementing the `Solvent.Filter` protocol.
 - Event IDs are now being returned an accepted as a `{source, id}` tuple.
   This is because the CloudEvents spec only requires that IDs are unique in the scope of the source.
 

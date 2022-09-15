@@ -139,14 +139,25 @@ defmodule Solvent do
       ...> end)
       {:ok, "My subscriber"}
 
-  The second argument, `filter`, must be a filter expression.
+  The second argument, `filter`, must be a filter expression (see `Solvent.Filter`) or a struct that implements `Solvent.Filter`.
   """
   def subscribe(id, filter, fun) when is_function(fun) do
+    filter =
+      if is_list(filter) do
+        build_filter(filter)
+      else
+        filter
+      end
+
+    if is_nil(Solvent.Filter.impl_for(filter)) do
+      raise ArgumentError, "Argument must be either a filter expression or must implement `Solvent.Filter`. Got: #{inspect filter}"
+    end
+
     :telemetry.span(
       [:solvent, :subscriber, :subscribing],
       %{subscriber_id: id, filter: filter},
       fn ->
-        :ok = Solvent.SubscriberStore.insert(id, build_filter(filter), fun)
+        :ok = Solvent.SubscriberStore.insert(id, filter, fun)
         {:ok, %{}}
       end
     )
