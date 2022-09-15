@@ -6,28 +6,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+These changes reflect what I've learned while integrating Solvent into other projects,
+and while working on projects that also work on CloudEvents.
+They have a focus mainly in two places: making more information available to users,
+and making the library better follow the CloudEvents spec.
+
 ### Added
 
 - The `Solvent.EventStore.fetch!/1` function, which will raise a descriptive error if the event does not exist.
-- You can now subscribe to all events passing through Solvent by subscribing to the type `:all`.
 - You can now pass a `Solvent.Event` struct into `Solvent.publish/2` yourself
 - `Solvent.Event` can now be encoded to and from JSON, and implements `Jason.Encoder`
 - Telemetry events are now documented with `:telemetry_registry`.
 - Added `[:solvent, :event, :published]` telemetry event,
   dispatched when an event is.
-- Lists of event types can now be subscribed.
 - Logger metadata is now added before subscriber functions are executed.
   This data includes:
     - `:solvent_event_type` - The dispatched event's type (AKA topic)
+    - `:solvent_event_source` - The dispatched event's source
     - `:solvent_event_id` - The dispatched event's ID
     - `:solvent_subscriber_id` - The ID of the subscriber that is currently executing
 
 ### Changed
 
-- Regexes can no longer be subscribed. You cannot match them with matchspecs
-  in ETS arguments, so searching for subscribers will be dramatically slower
-  if I have to scan through the table matching regexes. Besides, you should
-  know exactly what events you're matching.
+- *Breaking change*: The type matching argument is now required to be a more complex filter argument.
+- Event IDs are now being returned an accepted as a `{source, id}` tuple.
+  This is because the CloudEvents spec only requires that IDs are unique in the scope of the source.
 
 ## [0.2.0]
 
