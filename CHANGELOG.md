@@ -33,6 +33,9 @@ and making the library better follow the CloudEvents spec.
   or it can be any struct implementing the `Solvent.Filter` protocol.
 - *Breaking change*: `Solvent.subscribe` no longer accepts literal functions, but module-function-args tuples.
   This will allow Solvent to support a much wider variety of backends, since an module-function-args tuple can be serialized.
+- *Breaking change*: Structs from the [`cloudevents`](https://github.com/kevinbader/cloudevents-ex)
+  are now the event struct of choice, replacing `Solvent.Event`.
+  You can still create these structs with `Solvent.Event.new/2`, but they will now be a version 1.0 `cloudevents` struct.
 - Event IDs are now being returned and accepted as a `{source, id}` tuple.
   This is because the CloudEvents spec only requires that IDs are unique in the scope of the source.
 
