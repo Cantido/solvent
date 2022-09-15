@@ -38,6 +38,7 @@ defmodule Solvent.MixProject do
   defp deps do
     [
       {:benchfella, "~> 0.3.0", only: :dev},
+      {:cloudevents, "~> 0.6.1"},
       {:uniq, "~> 0.4"},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:jason, "~> 1.3"},

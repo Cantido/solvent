@@ -196,7 +196,7 @@ defmodule Solvent do
     publish(event, opts)
   end
 
-  def publish(%Solvent.Event{} = event, _opts) do
+  def publish(event, _opts) do
     Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
       subscribers = Solvent.SubscriberStore.listeners_for(event)
       subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
