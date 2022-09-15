@@ -130,7 +130,7 @@ defmodule Solvent do
   The function argument will be given the ID of the event.
   You must fetch the event from `Solvent.EventStore` if you wish to use it.
 
-  The ID is optional, and defaults to a version 4 UUID.
+  The ID is optional, and defaults to a version 7 UUID.
 
       iex> Solvent.subscribe("My subscriber", [exact: [type: "subscriber.event.published"]], fn event_id ->
       ...>   {:ok, _event} = Solvent.EventStore.fetch(event_id)
