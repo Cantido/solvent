@@ -27,7 +27,6 @@ defmodule Solvent.SubscriberStore do
   def listeners_for(event) do
     listeners = :ets.tab2list(@table_name)
 
-    Logger.info("all listeners: #{inspect listeners, pretty: true}")
     Task.Supervisor.async_stream(Solvent.TaskSupervisor, listeners, fn {id, filter, fun} ->
       if Solvent.Filter.match?(filter, event) do
         {id, filter, fun}
