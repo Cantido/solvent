@@ -31,7 +31,9 @@ and making the library better follow the CloudEvents spec.
 - *Breaking change*: The type matching argument is now required to be a more complex filter argument.
   The argument can either be keyword list filter expression (see the `Solvent.Filter` HexDocs),
   or it can be any struct implementing the `Solvent.Filter` protocol.
-- Event IDs are now being returned an accepted as a `{source, id}` tuple.
+- *Breaking change*: `Solvent.subscribe` no longer accepts literal functions, but module-function-args tuples.
+  This will allow Solvent to support a much wider variety of backends, since an module-function-args tuple can be serialized.
+- Event IDs are now being returned and accepted as a `{source, id}` tuple.
   This is because the CloudEvents spec only requires that IDs are unique in the scope of the source.
 
 ## [0.2.0]
