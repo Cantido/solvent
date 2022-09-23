@@ -40,17 +40,15 @@ defmodule Solvent do
   Solvent is an event bus built to be fast and easy-to-use.
 
   Publish and subscribe to events here.
-  You can either provide a function to be run, with `subscribe/2` and `subscribe/3`,
+  You can either provide a module-function-args tuple to be run, with `subscribe/2` and `subscribe/3`,
   or subscribe a module using `subscribe/1`.
   See the docs for `Solvent.Subscriber` for more information on module subscribers.
 
-      iex> Solvent.subscribe("My first subscriber", [exact: [type: "com.example.event.published"]], fn _type, event_id ->
-      ...>   {:ok, _event} = Solvent.EventStore.fetch(event_id)
-      ...>
-      ...>   # play with the event, and acknowledge it when you're done
-      ...>
-      ...>   Solvent.EventStore.ack(event_id, "My first subscriber")
-      ...> end)
+      iex> Solvent.subscribe(
+      ...>  "My first subscriber",
+      ...>  [exact: [type: "com.example.event.published"]],
+      ...>  {Solvent.MessengerHandler, :handle_event, []}
+      ...> )
       {:ok, "My first subscriber"}
 
   It's important to observe that subscriber functions are given the _identifier_ of an event, _not_ the event itself.
@@ -91,14 +89,14 @@ defmodule Solvent do
 
 
   @doc """
-  Subscribe to the event bus.
+  Execute a module subscriber when an event is published.
 
   When the first argument is a module, the module is subscribed to the event bus,
   and the second argument is expected to be a list of options, if it is provided at all.
   See `Solvent.Subscriber` for details.
 
-  If the first argument is a string or regex, then the second argument must be a function,
-  and the function behaves exactly like `subscribe/3` but with an auto-generated ID.
+  If the first argument is a string or regex, then the second argument must be a module-function-args tuple.
+  Besides that, this function behaves exactly like `subscribe/3` but with an auto-generated ID.
   """
   def subscribe(arg1, arg2 \\ [])
 
@@ -107,18 +105,12 @@ defmodule Solvent do
     filter = Keyword.get(opts, :filter, apply(module, :filter, []))
     auto_ack? = Keyword.get(opts, :auto_ack, apply(module, :auto_ack?, []))
 
-    fun = fn type, event_id ->
-      apply(module, :handle_event, [type, event_id])
+    mfa = {Solvent.Subscriber, :run_module, [module, id, auto_ack?]}
 
-      if auto_ack? do
-        Solvent.EventStore.ack(event_id, id)
-      end
-    end
-
-    subscribe(id, filter, fun)
+    subscribe(id, filter, mfa)
   end
 
-  def subscribe(filter, fun) when is_function(fun) do
+  def subscribe(filter, fun) when is_tuple(fun) do
     subscribe(Uniq.UUID.uuid7(), filter, fun)
   end
 
@@ -132,16 +124,16 @@ defmodule Solvent do
 
   The ID is optional, and defaults to a version 7 UUID.
 
-      iex> Solvent.subscribe("My subscriber", [exact: [type: "subscriber.event.published"]], fn event_id ->
-      ...>   {:ok, _event} = Solvent.EventStore.fetch(event_id)
-      ...>   # Use the event, then delete it
-      ...>   Solvent.EventStore.delete(event_id)
-      ...> end)
+      iex> Solvent.subscribe(
+      ...>   "My subscriber",
+      ...>   [exact: [type: "subscriber.event.published"]],
+      ...>   {Solvent.MessengerHandler, :handle_event, []}
+      ...> )
       {:ok, "My subscriber"}
 
   The second argument, `filter`, must be a filter expression (see `Solvent.Filter`) or a struct that implements `Solvent.Filter`.
   """
-  def subscribe(id, filter, fun) when is_function(fun) do
+  def subscribe(id, filter, fun) when is_tuple(fun) do
     filter =
       if is_list(filter) do
         build_filter(filter)
@@ -180,7 +172,7 @@ defmodule Solvent do
   See `Solvent.Event` for details on what that struct contains.
   All values given as options are inserted into the event struct.
 
-  ID values are version 4 UUIDs by default, and you don't need to provide them.
+  ID values are version 7 UUIDs by default, and you don't need to provide them.
   ## Examples
 
       Solvent.publish("io.github.cantido.documentation.read")
@@ -220,7 +212,7 @@ defmodule Solvent do
       if Enum.count(subscribers) > 0 do
           :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
-        notifier_fun = fn {subscriber_id, _filter, fun} ->
+        notifier_fun = fn {subscriber_id, _filter, {mod, fun, args}} ->
           Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
             :telemetry.span(
               [:solvent, :subscriber, :processing],
@@ -232,7 +224,7 @@ defmodule Solvent do
                   solvent_event_id: event.id,
                   solvent_event_type: event.type
                 )
-                fun.(event.type, {event.source, event.id})
+                apply(mod, fun, [event.type, {event.source, event.id}] ++ args)
                 {:ok, %{}}
               end
             )

@@ -91,6 +91,15 @@ defmodule Solvent.Subscriber do
   """
   @callback handle_event(String.t(), String.t()) :: any()
 
+
+  def run_module(type, event_id, mod, subscriber_id, auto_ack?) do
+    apply(mod, :handle_event, [type, event_id])
+
+    if auto_ack? do
+      Solvent.EventStore.ack(event_id, subscriber_id)
+    end
+  end
+
   @doc """
   Unwraps the result from `Solvent.EventStore.fetch/1` and raises if the event is not found.
   """

@@ -7,7 +7,7 @@ defmodule Solvent.SubscriberStore do
     :ets.new(@table_name, [:bag, :public, :named_table])
   end
 
-  def insert(id, filter, fun) when is_function(fun) do
+  def insert(id, filter, fun) when is_function(fun) or is_tuple(fun) do
     true = :ets.insert(@table_name, {id, filter, fun})
     :ok
   end

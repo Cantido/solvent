@@ -8,17 +8,11 @@ defmodule SolventTest do
   end
 
   test "calls subscriber functions" do
-    pid = self()
-    ref = make_ref()
+    Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscriberfun.published"]], {Solvent.MessengerHandler, :handle_event, []})
 
-    Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscriberfun.published"]], fn _type, _event ->
-      send(pid, ref)
-    end)
+    Solvent.publish("subscriberfun.published", data: self())
 
-    Solvent.publish("subscriberfun.published")
-
-    assert_receive ^ref
-    refute_receive ^ref
+    assert_receive :notified
   end
 
   test "can subscribe modules" do
@@ -47,23 +41,19 @@ defmodule SolventTest do
   end
 
   test "can subscribe a function to multiple event types at once" do
-    pid = self()
     filter = [any: [
       [exact: [type: "multisubscribe.first"]],
       [exact: [type: "multisubscribe.second"]]
     ]]
 
-    Solvent.subscribe(Uniq.UUID.uuid7(), filter, fn
-      "multisubscribe.first", _event -> send(pid, :notified_first)
-      "multisubscribe.second", _event -> send(pid, :notified_second)
-    end)
+    Solvent.subscribe(Uniq.UUID.uuid7(), filter, {Solvent.MessengerHandler, :handle_event, []})
 
-    Solvent.publish("multisubscribe.first")
+    Solvent.publish("multisubscribe.first", data: self())
 
-    assert_receive :notified_first
+    assert_receive :notified
 
-    Solvent.publish("multisubscribe.second")
+    Solvent.publish("multisubscribe.second", data: self())
 
-    assert_receive :notified_second
+    assert_receive :notified
   end
 end

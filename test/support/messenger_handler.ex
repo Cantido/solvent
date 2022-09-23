@@ -7,7 +7,14 @@ defmodule Solvent.MessengerHandler do
 
   def handle_event(type, event_id) do
     Logger.debug("Module handler invoked with event ID #{inspect(event_id)} with type #{type}")
-    {:ok, event} = Solvent.EventStore.fetch(event_id)
-    send(event.data, :notified)
+
+    case Solvent.EventStore.fetch(event_id) do
+      {:ok, event} ->
+        send(event.data, :notified)
+      :error ->
+        nil
+    end
+
+    :ok
   end
 end
