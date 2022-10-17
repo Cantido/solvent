@@ -39,6 +39,19 @@ and making the library better follow the CloudEvents spec.
 - Event IDs are now being returned and accepted as a `{source, id}` tuple.
   This is because the CloudEvents spec only requires that IDs are unique in the scope of the source.
 
+### How to upgrade
+
+- Replace all string type arguments with an exact filter expression
+- Replace all function literals with module-function-args tuples
+
+```elixir
+# Before
+Solvent.subscribe("com.example.event.published", fn -> IO.puts("Hello!") end)
+
+# After
+Solvent.subscribe([exact: [type: "com.example.event.published"]], {IO, :puts, ["Hello!"]})
+```
+
 ## [0.2.0]
 
 ### Changed
