@@ -46,6 +46,6 @@ test-unlocked:
   RUN mix deps.unlock --all
   RUN mix deps.get
 
-  COPY lib ./lib
+  COPY --dir lib/ test/ ./
 
   RUN mix test
