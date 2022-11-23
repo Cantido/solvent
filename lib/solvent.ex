@@ -92,7 +92,7 @@ defmodule Solvent do
   def subscribe(%Subscription{} = sub) do
     :telemetry.span(
       [:solvent, :subscriber, :subscribing],
-      %{subscriber_id: sub.id, filter: sub.filter},
+      %{subscriber_id: sub.id, filter: sub.filters},
       fn ->
         :ok = Solvent.SubscriberStore.insert(sub)
         {:ok, %{}}
@@ -147,21 +147,21 @@ defmodule Solvent do
 
   The second argument, `filter`, must be a filter expression (see `Solvent.Filter`) or a struct that implements `Solvent.Filter`.
   """
-  def subscribe(id, filter, sink) do
-    filter =
-      if is_list(filter) do
-        build_filter(filter)
+  def subscribe(id, filters, sink) do
+    filters =
+      if is_list(filters) do
+        build_filters(filters)
       else
-        filter
+        filters
       end
 
-    if is_nil(Solvent.Filter.impl_for(filter)) do
-      raise ArgumentError, "Argument must be either a filter expression or must implement `Solvent.Filter`. Got: #{inspect filter}"
+    unless Enum.all?(filters, &Solvent.Filter.impl_for/1) do
+      raise ArgumentError, "Argument must be either a filter expression or must implement `Solvent.Filter`. Got: #{inspect filters}"
     end
 
     sub = %Subscription{
       id: id,
-      filter: filter,
+      filters: filters,
       sink: sink
     }
 
@@ -256,19 +256,23 @@ defmodule Solvent do
     {:ok, {event.source, event.id}}
   end
 
-  def build_filter([exact: props]), do: %Solvent.Filter.Exact{properties: props}
-  def build_filter([prefix: props]), do: %Solvent.Filter.Prefix{properties: props}
-  def build_filter([suffix: props]), do: %Solvent.Filter.Suffix{properties: props}
-
-  def build_filter([any: subs]) do
-    %Solvent.Filter.Any{subfilters: Enum.map(subs, &build_filter/1)}
+  def build_filters(filters) when is_list(filters) do
+    Enum.map(filters, &build_filter/1)
   end
 
-  def build_filter([all: subs]) do
-    %Solvent.Filter.All{subfilters: Enum.map(subs, &build_filter/1)}
+  defp build_filter({:exact, props}), do: %Solvent.Filter.Exact{properties: props}
+  defp build_filter({:prefix, props}), do: %Solvent.Filter.Prefix{properties: props}
+  defp build_filter({:suffix, props}), do: %Solvent.Filter.Suffix{properties: props}
+
+  defp build_filter({:any, subs}) do
+    %Solvent.Filter.Any{subfilters: build_filters(subs)}
   end
 
-  def build_filter([not: subfilter]) do
+  defp build_filter({:all, subs}) do
+    %Solvent.Filter.All{subfilters: build_filters(subs)}
+  end
+
+  defp build_filter({:not, subfilter}) do
     %Solvent.Filter.Not{subfilter: build_filter(subfilter)}
   end
 end

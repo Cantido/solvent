@@ -93,8 +93,8 @@ defmodule SolventTest do
 
   test "can subscribe a function to multiple event types at once" do
     filter = [any: [
-      [exact: [type: "multisubscribe.first"]],
-      [exact: [type: "multisubscribe.second"]]
+      exact: [type: "multisubscribe.first"],
+      exact: [type: "multisubscribe.second"]
     ]]
 
     Solvent.subscribe(Uniq.UUID.uuid7(), filter, {Solvent.MessengerHandler, :handle_event, []})
