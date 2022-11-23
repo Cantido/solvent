@@ -30,7 +30,7 @@ defmodule Solvent.SubscriberStore do
     listeners = :ets.tab2list(@table_name)
 
     Task.Supervisor.async_stream(Solvent.TaskSupervisor, listeners, fn {id, sub} ->
-      if Solvent.Filter.match?(sub.filter, event) do
+      if Subscription.match?(sub, event) do
         {id, sub}
       end
     end)

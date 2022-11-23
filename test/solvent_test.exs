@@ -36,6 +36,21 @@ defmodule SolventTest do
     assert_receive ^test_ref
   end
 
+  test "can subscribe to sources without filters" do
+    test_pid = self()
+
+    sub = %Solvent.Subscription{
+      id: Uniq.UUID.uuid7(),
+      source: Uniq.UUID.uuid7(:urn),
+      sink: test_pid
+    }
+
+    Solvent.subscribe(sub)
+    {:ok, id} = Solvent.publish("subscriber.nofilter.published", source: sub.source)
+
+    assert_receive {:event, _type, ^id}
+  end
+
   test "can subscribe modules" do
     Solvent.subscribe(Solvent.MessengerHandler, id: Uniq.UUID.uuid7())
     Solvent.publish("modulesubscribe.published", data: self())
