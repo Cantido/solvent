@@ -15,6 +15,16 @@ defmodule SolventTest do
     assert_receive :notified
   end
 
+  test "calls subscriber PIDs" do
+    Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscriberpid.published"]], self())
+
+    id = Uniq.UUID.uuid7()
+    Solvent.publish("subscriberpid.published", id: id)
+
+    assert_receive {:event, event}
+    assert event.id == id
+  end
+
   test "can subscribe modules" do
     Solvent.subscribe(Solvent.MessengerHandler, id: Uniq.UUID.uuid7())
     Solvent.publish("modulesubscribe.published", data: self())

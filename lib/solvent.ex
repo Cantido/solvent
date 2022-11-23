@@ -135,7 +135,7 @@ defmodule Solvent do
 
   The second argument, `filter`, must be a filter expression (see `Solvent.Filter`) or a struct that implements `Solvent.Filter`.
   """
-  def subscribe(id, filter, fun) when is_tuple(fun) do
+  def subscribe(id, filter, sink) do
     filter =
       if is_list(filter) do
         build_filter(filter)
@@ -154,7 +154,7 @@ defmodule Solvent do
         subscription = %Subscription{
           id: id,
           filter: filter,
-          sink: fun
+          sink: sink
         }
         :ok = Solvent.SubscriberStore.insert(subscription)
         {:ok, %{}}
