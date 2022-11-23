@@ -220,7 +220,6 @@ defmodule Solvent do
           :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
         notifier_fun = fn {subscriber_id, subscription} ->
-          {mod, fun, args} = subscription.sink
           Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
             :telemetry.span(
               [:solvent, :subscriber, :processing],
@@ -232,7 +231,7 @@ defmodule Solvent do
                   solvent_event_id: event.id,
                   solvent_event_type: event.type
                 )
-                apply(mod, fun, [event.type, {event.source, event.id}] ++ args)
+                Solvent.Sink.deliver(subscription.sink, event)
                 {:ok, %{}}
               end
             )
