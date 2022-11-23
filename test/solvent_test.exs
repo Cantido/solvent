@@ -51,6 +51,21 @@ defmodule SolventTest do
     assert_receive {:event, _type, ^id}
   end
 
+  test "can subscribe to types" do
+    test_pid = self()
+
+    sub = %Solvent.Subscription{
+      id: Uniq.UUID.uuid7(),
+      sink: test_pid,
+      types: ["subscriber.type.published"]
+    }
+
+    Solvent.subscribe(sub)
+    {:ok, id} = Solvent.publish("subscriber.type.published")
+
+    assert_receive {:event, _type, ^id}
+  end
+
   test "can subscribe modules" do
     Solvent.subscribe(Solvent.MessengerHandler, id: Uniq.UUID.uuid7())
     Solvent.publish("modulesubscribe.published", data: self())
