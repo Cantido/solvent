@@ -89,6 +89,18 @@ defmodule Solvent do
 
   require Logger
 
+  def subscribe(%Subscription{} = sub) do
+    :telemetry.span(
+      [:solvent, :subscriber, :subscribing],
+      %{subscriber_id: sub.id, filter: sub.filter},
+      fn ->
+        :ok = Solvent.SubscriberStore.insert(sub)
+        {:ok, %{}}
+      end
+    )
+
+    {:ok, sub.id}
+  end
 
   @doc """
   Execute a module subscriber when an event is published.
@@ -147,21 +159,13 @@ defmodule Solvent do
       raise ArgumentError, "Argument must be either a filter expression or must implement `Solvent.Filter`. Got: #{inspect filter}"
     end
 
-    :telemetry.span(
-      [:solvent, :subscriber, :subscribing],
-      %{subscriber_id: id, filter: filter},
-      fn ->
-        subscription = %Subscription{
-          id: id,
-          filter: filter,
-          sink: sink
-        }
-        :ok = Solvent.SubscriberStore.insert(subscription)
-        {:ok, %{}}
-      end
-    )
+    sub = %Subscription{
+      id: id,
+      filter: filter,
+      sink: sink
+    }
 
-    {:ok, id}
+    subscribe(sub)
   end
 
   @doc """
