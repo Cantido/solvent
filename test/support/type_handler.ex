@@ -1,7 +1,7 @@
-defmodule Solvent.MessengerHandler do
+defmodule Solvent.TypeHandler do
   use Solvent.Subscriber,
     id: "messenger subscriber",
-    filters: [exact: [type: "modulesubscribe.published"]]
+    types: ["typemodulesubscribe.publish"]
 
   require Logger
 
@@ -13,7 +13,7 @@ defmodule Solvent.MessengerHandler do
         {pid, ref} = event.data
         send(pid, ref)
       :error ->
-        raise "Event not found"
+        nil
     end
 
     :ok

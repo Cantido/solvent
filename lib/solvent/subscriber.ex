@@ -5,7 +5,7 @@ defmodule Solvent.Subscriber do
   Use this module to quickly create a module that can handle Solvent events.
 
       defmodule MyModule do
-        use Solvent.Subscriber, filter: [exact: [type: "myevent.published"]]
+        use Solvent.Subscriber, filters: [exact: [type: "myevent.published"]]
 
         def handle_event(type, event_id) do
           # Fetch and handle your event here
@@ -22,7 +22,7 @@ defmodule Solvent.Subscriber do
 
       defmodule MyModule do
         use Solvent.Subscriber,
-          filter: [prefix: [type: "myevents."]],
+          filters: [prefix: [type: "myevents."]],
           auto_ack: false
 
         def handle_event(type, event_id) do
@@ -36,7 +36,7 @@ defmodule Solvent.Subscriber do
 
   ## Options
 
-    - `:filter` (required) - the filter expression to match events against
+    - `:filters` - the filter expression to match events against
     - `:id` - the ID to give the subscriber function. Defaults to the current module name.
     - `:auto_ack` - automatically call `Subscriber.EventStore.ack/1` after `c:handle_event/2` returns. Defaults to `true`.
   """
@@ -47,7 +47,9 @@ defmodule Solvent.Subscriber do
 
       @behaviour Solvent.Subscriber
       @solvent_listener_id unquote(Keyword.get(usage_opts, :id, to_string(__MODULE__)))
-      @solvent_filter unquote(Keyword.fetch!(usage_opts, :filter))
+      @solvent_source unquote(Keyword.get(usage_opts, :source))
+      @solvent_types unquote(Keyword.get(usage_opts, :types))
+      @solvent_filters unquote(Keyword.get(usage_opts, :filters, []))
       @solvent_auto_ack unquote(Keyword.get(usage_opts, :auto_ack, true))
 
       def subscriber_id do
@@ -55,7 +57,17 @@ defmodule Solvent.Subscriber do
       end
 
       def filter do
-        @solvent_filter
+        @solvent_filters
+      end
+
+      def subscription do
+        %Solvent.Subscription{
+          id: @solvent_listener_id,
+          sink: {__MODULE__, :run_module, [__MODULE__, @solvent_listener_id, @solvent_auto_ack]},
+          source: @solvent_source,
+          types: @solvent_types,
+          filters: Solvent.build_filters(@solvent_filters)
+        }
       end
 
       def auto_ack? do

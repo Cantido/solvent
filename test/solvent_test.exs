@@ -10,9 +10,10 @@ defmodule SolventTest do
   test "calls subscriber mod-fun-args" do
     Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscribermfa.published"]], {Solvent.MessengerHandler, :handle_event, []})
 
-    Solvent.publish("subscribermfa.published", data: self())
+    test_ref = make_ref()
+    Solvent.publish("subscribermfa.published", data: {self(), test_ref})
 
-    assert_receive :notified
+    assert_receive ^test_ref
   end
 
   test "calls subscriber PIDs" do
@@ -66,32 +67,52 @@ defmodule SolventTest do
     assert_receive {:event, _type, ^id}
   end
 
-  test "can subscribe modules" do
+  test "can subscribe modules that select with filters" do
+    test_ref = make_ref()
     Solvent.subscribe(Solvent.MessengerHandler, id: Uniq.UUID.uuid7())
-    Solvent.publish("modulesubscribe.published", data: self())
+    Solvent.publish("modulesubscribe.published", data: {self(), test_ref})
 
-    assert_receive :notified
+    assert_receive ^test_ref
+  end
+
+  test "can subscribe modules that select with sources" do
+    test_ref = make_ref()
+    Solvent.subscribe(Solvent.SourceHandler, id: Uniq.UUID.uuid7())
+    Solvent.publish("sourcemodulesubscribe.published", source: "subscriber-module-source", data: {self(), test_ref})
+
+    assert_receive ^test_ref
+  end
+
+  test "can subscribe modules that select with types" do
+    test_ref = make_ref()
+    Solvent.subscribe(Solvent.TypeHandler, id: Uniq.UUID.uuid7())
+    Solvent.publish("typemodulesubscribe.published", data: {self(), test_ref})
+
+    assert_receive ^test_ref
   end
 
   test "can unsubscribe modules" do
+    test_ref = make_ref()
     sub_id = Uniq.UUID.uuid7()
     Solvent.subscribe(Solvent.MessengerHandler, id: sub_id)
     Solvent.unsubscribe(sub_id)
-    Solvent.publish("modulesubscribe.published", data: self())
+    Solvent.publish("modulesubscribe.published", data: {self(), test_ref})
 
-    refute_receive :notified
+    refute_receive ^test_ref
   end
 
   test "modules auto-ack which deletes events" do
+    test_ref = make_ref()
     Solvent.subscribe(Solvent.MessengerHandler, id: Uniq.UUID.uuid7())
-    {:ok, event_id} = Solvent.publish("modulesubscribe.published", data: self())
+    {:ok, event_id} = Solvent.publish("modulesubscribe.published", data: {self(), test_ref})
 
-    assert_receive :notified
+    assert_receive ^test_ref
     Process.sleep(100)
     assert :error == Solvent.EventStore.fetch(event_id)
   end
 
   test "can subscribe a function to multiple event types at once" do
+    test_ref = make_ref()
     filter = [any: [
       exact: [type: "multisubscribe.first"],
       exact: [type: "multisubscribe.second"]
@@ -99,12 +120,12 @@ defmodule SolventTest do
 
     Solvent.subscribe(Uniq.UUID.uuid7(), filter, {Solvent.MessengerHandler, :handle_event, []})
 
-    Solvent.publish("multisubscribe.first", data: self())
+    Solvent.publish("multisubscribe.first", data: {self(), test_ref})
 
-    assert_receive :notified
+    assert_receive ^test_ref
 
-    Solvent.publish("multisubscribe.second", data: self())
+    Solvent.publish("multisubscribe.second", data: {self(), test_ref})
 
-    assert_receive :notified
+    assert_receive ^test_ref
   end
 end
