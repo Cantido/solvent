@@ -1,19 +1,21 @@
 defmodule Solvent.SubscriberStore do
   @moduledoc false
 
+  alias Solvent.Subscription
+
   @table_name :solvent_listeners
 
   def init do
     :ets.new(@table_name, [:bag, :public, :named_table])
   end
 
-  def insert(id, filter, fun) when is_function(fun) or is_tuple(fun) do
-    true = :ets.insert(@table_name, {id, filter, fun})
+  def insert(%Subscription{} = sub) do
+    true = :ets.insert(@table_name, {sub.id, sub})
     :ok
   end
 
   def delete(id) do
-    true = :ets.match_delete(@table_name, {id, :_, :_})
+    true = :ets.match_delete(@table_name, {id, :_})
     :ok
   end
 
@@ -27,12 +29,12 @@ defmodule Solvent.SubscriberStore do
   def listeners_for(event) do
     listeners = :ets.tab2list(@table_name)
 
-    Task.Supervisor.async_stream(Solvent.TaskSupervisor, listeners, fn {id, filter, fun} ->
-      if Solvent.Filter.match?(filter, event) do
-        {id, filter, fun}
+    Task.Supervisor.async_stream(Solvent.TaskSupervisor, listeners, fn {id, sub} ->
+      if Solvent.Filter.match?(sub.filter, event) do
+        {id, sub}
       end
     end)
-    |> Stream.reject(fn {:ok, listener} -> is_nil(listener) end)
-    |> Stream.map(fn {:ok, listener} -> listener end)
+    |> Stream.reject(fn {:ok, sub} -> is_nil(sub) end)
+    |> Stream.map(fn {:ok, sub} -> sub end)
   end
 end

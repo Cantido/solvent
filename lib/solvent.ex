@@ -85,6 +85,8 @@ defmodule Solvent do
 
   """
 
+  alias Solvent.Subscription
+
   require Logger
 
 
@@ -149,7 +151,12 @@ defmodule Solvent do
       [:solvent, :subscriber, :subscribing],
       %{subscriber_id: id, filter: filter},
       fn ->
-        :ok = Solvent.SubscriberStore.insert(id, filter, fun)
+        subscription = %Subscription{
+          id: id,
+          filter: filter,
+          sink: fun
+        }
+        :ok = Solvent.SubscriberStore.insert(subscription)
         {:ok, %{}}
       end
     )
@@ -212,7 +219,8 @@ defmodule Solvent do
       if Enum.count(subscribers) > 0 do
           :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
-        notifier_fun = fn {subscriber_id, _filter, {mod, fun, args}} ->
+        notifier_fun = fn {subscriber_id, subscription} ->
+          {mod, fun, args} = subscription.sink
           Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
             :telemetry.span(
               [:solvent, :subscriber, :processing],
