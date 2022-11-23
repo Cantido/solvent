@@ -7,10 +7,10 @@ defmodule SolventTest do
     Solvent.EventStore.delete_all()
   end
 
-  test "calls subscriber functions" do
-    Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscriberfun.published"]], {Solvent.MessengerHandler, :handle_event, []})
+  test "calls subscriber mod-fun-args" do
+    Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscribermfa.published"]], {Solvent.MessengerHandler, :handle_event, []})
 
-    Solvent.publish("subscriberfun.published", data: self())
+    Solvent.publish("subscribermfa.published", data: self())
 
     assert_receive :notified
   end
@@ -18,11 +18,22 @@ defmodule SolventTest do
   test "calls subscriber PIDs" do
     Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscriberpid.published"]], self())
 
-    id = Uniq.UUID.uuid7()
-    Solvent.publish("subscriberpid.published", id: id)
+    {:ok, {expected_source, expected_id}} = Solvent.publish("subscriberpid.published")
 
-    assert_receive {:event, event}
-    assert event.id == id
+    assert_receive {:event, type, id}
+    assert id == {expected_source, expected_id}
+    assert type == "subscriberpid.published"
+  end
+
+  test "calls anonymous functions" do
+    test_pid = self()
+    test_ref = make_ref()
+
+    Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscriberanon.published"]], fn _type, _id -> send test_pid, test_ref end)
+
+    Solvent.publish("subscriberanon.published")
+
+    assert_receive ^test_ref
   end
 
   test "can subscribe modules" do
