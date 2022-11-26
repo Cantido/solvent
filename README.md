@@ -24,14 +24,26 @@ be found at <https://hexdocs.pm/solvent>.
 
 ## Usage
 
-Create an event handler by using the `Solvent.Subscriber` module,
-and implement its `handle_event/1` callback.
-Provide a filter matching the [CloudEvents subscription filter spec](https://github.com/cloudevents/spec/blob/main/subscriptions/spec.md#324-filters).
+Solvent is flexible enough to offer several ways of delivering events,
+and is exensible enough to add your own.
+Out of the box, Solvent allows you to subscribe with anonymous functions, module-function-args tuples, PIDs,
+and modules that `use` the `Solvent.Subscriber` module.
 
 ```elixir
+# anonymous functions
+Solvent.subscribe(fn event_id -> IO.inspect(event_id) end, source: "https://myapp.example.com", types: ["com.myevent.published"])
+
+# module-function-args tuples
+Solvent.subscribe({IO, :inspect, []}, source: "https://myapp.example.com", types: ["com.myevent.published"])
+
+# PIDs
+Solvent.subscribe(self(), source: "https://myapp.example.com", types: ["com.myevent.published"])
+
+# Subscriber modules
 defmodule MySubscriber do
   use Solvent.Subscriber,
-    filter: [exact: [type: "com.myevent.published]]
+    source: "https://myapp.example.com",
+    types: ["com.myevent.published"]
 
   @impl true
   def handle_event(_event_id) do
@@ -40,7 +52,7 @@ defmodule MySubscriber do
 end
 ```
 
-Then, in your application's `start/2` function, tell Solvent to subscribe it.
+Set up your subscriptions in your application's `start/2` function.
 
 ```elixir
 def start(_type, _args) do

@@ -37,47 +37,20 @@ defmodule Solvent do
   }
 
   @moduledoc """
-  Solvent is an event bus built to be fast and easy-to-use.
+  Solvent is an event bus built to be fast and easy-to-use,
+  and takes a lot of inspiration from the [CloudEvents](https://cloudevents.io) spec for the best interoperability with other event systems.
 
-  Publish and subscribe to events here.
-  You can either provide a module-function-args tuple to be run, with `subscribe/2` and `subscribe/3`,
-  or subscribe a module using `subscribe/1`.
-  See the docs for `Solvent.Subscriber` for more information on module subscribers.
+  In the CloudEvents specification, every event is required to have an ID, a source, and a type.
+  The `source` field identifies the system that sent the event, and the ID must identify the event and be unique in the scope of the source.
+  Lastly, the `type` field, also called a "topic," identifies the kind of event that took place.
 
-      iex> Solvent.subscribe(
-      ...>  "My first subscriber",
-      ...>  [exact: [type: "com.example.event.published"]],
-      ...>  {Solvent.MessengerHandler, :handle_event, []}
-      ...> )
-      {:ok, "My first subscriber"}
+  In Solvent, only the `type` field is required, but it is strongly recommended to provide a `source` field as well.
+  Solvent generates a version 7 UUID for event ID fields and this rarely needs to be overridden.
+  See the `Solvent.Event` docs for details on what defaults are provided.
 
-  It's important to observe that subscriber functions are given the _identifier_ of an event, _not_ the event itself.
-  Also, note that we call `Solvent.EventStore.ack/2` once we're done with the event,
-  so that Solvent knows it can clean up the event from the store.
-
-  > #### Tip {: .tip}
-  >
-  > Use the `Solvent.Subscriber` module to make a subscriber that automatically acknowledges events,
-  > along with lots of other nice features.
-
-  The `filter` argument must be a filter expression. See `Loom.Filter` for documentation on filter expressions.
-
-  Once you have a subscriber, publish an event.
-  Data is optional, only a type is required.
-  This can be any string.
-  I would recommend the CloudEvents format, which starts with a reversed DNS name, and is dot-separated.
-  This will help avoid collisions with events from other applications.
-
-      Solvent.publish("io.github.cantido.myevent.published")
-      {:ok, "0b06bdb7-06a7-4df9-a825-1fd225ceea43"}
-
-  Here you can also supply data for the event with the `:data` option.
-
-      Solvent.publish("io.github.cantido.myevent.published", data: "Hello, world!")
-      {:ok, "d0f63676-b853-4f30-8bcf-ea10f2184556"}
-
-  This will be available on the `:data` key of the event object you fetch from `Solvent.EventStore`.
-  See the `Solvent.Event` docs for more information on what that struct contains.
+  Subscribe to the event stream with `subscribe/2`, and publish events using `publish/2`.
+  You can also create a `Solvent.Subscription` or a `Solvent.Event` yourself and pass those to `subscribe/1` and `publish/1`, respectively.
+  The functions here share a signature with their corresponding struct functions, but have the additional benefit of interacting with the event bus.
 
   ## Telemetry
 
@@ -89,6 +62,9 @@ defmodule Solvent do
 
   require Logger
 
+  @doc """
+  Subscribe to the event stream with a pre-made `Solvent.Subscription` struct.
+  """
   def subscribe(%Subscription{} = sub) do
     :telemetry.span(
       [:solvent, :subscriber, :subscribing],
@@ -103,67 +79,46 @@ defmodule Solvent do
   end
 
   @doc """
-  Execute a module subscriber when an event is published.
+  Subscribe to the event stream.
 
-  When the first argument is a module, the module is subscribed to the event bus,
-  and the second argument is expected to be a list of options, if it is provided at all.
-  See `Solvent.Subscriber` for details.
-
-  If the first argument is a string or regex, then the second argument must be a module-function-args tuple.
-  Besides that, this function behaves exactly like `subscribe/3` but with an auto-generated ID.
-  """
-  def subscribe(arg1, arg2 \\ [])
-
-  def subscribe(module, opts) when is_atom(module) and is_list(opts) do
-    id = Keyword.get(opts, :id, apply(module, :subscriber_id, []))
-    filter = Keyword.get(opts, :filter, apply(module, :filter, []))
-    auto_ack? = Keyword.get(opts, :auto_ack, apply(module, :auto_ack?, []))
-
-    mfa = {Solvent.Subscriber, :run_module, [module, id, auto_ack?]}
-
-    subscribe(id, filter, mfa)
-  end
-
-  def subscribe(filter, fun) when is_tuple(fun) do
-    subscribe(Uniq.UUID.uuid7(), filter, fun)
-  end
-
-  @doc """
-  Execute a function when an event is published.
-
-  The `filter` argument is a keyword list of Cloudevents filters.
-
-  The function argument will be given the ID of the event.
-  You must fetch the event from `Solvent.EventStore` if you wish to use it.
-
-  The ID is optional, and defaults to a version 7 UUID.
+  The sink is what receives your events, and can be anything that implements the `Solvent.Sink` protocol,
+  which includes anonymous functions, module-function-args tuples, and PIDs.
+  Here's an example with a module-function-args tuple that subscribes to a single event type
+  and identifies the subscription as `"My first subscriber"`.
 
       iex> Solvent.subscribe(
-      ...>   "My subscriber",
-      ...>   [exact: [type: "subscriber.event.published"]],
-      ...>   {Solvent.MessengerHandler, :handle_event, []}
+      ...>  {Solvent.MessengerHandler, :handle_event, []},
+      ...>  types: ["com.example.event.published"],
+      ...>  id: "My first subscriber"
       ...> )
-      {:ok, "My subscriber"}
+      {:ok, "My first subscriber"}
 
-  The second argument, `filter`, must be a filter expression (see `Solvent.Filter`) or a struct that implements `Solvent.Filter`.
+  This function shares its signature with `Solvent.Subscription.new/2`,
+  and creates a `Solvent.Subscription` in the same way,
+  while also inserting the subscription into the `Solvent.SubscriberStore` so that the sink will begin to receive events.
+
+  Sinks are given an event _identifier_, and _not_ the event itself.
+  Your sink must fetch the full event from the `Solvent.EventStore`, so that extra data is not copied between processes.
+  You must also call `Solvent.EventStore.ack/2` once you are done with the event,
+  unless you want the event to stay in the event store forever.
+
+  > #### Tip {: .tip}
+  >
+  > Use the `Solvent.Subscriber` module to make a subscriber that automatically acknowledges events,
+  > along with lots of other nice features.
+
+  You can also create a `Solvent.Subscription` struct yourself, and pass it to `subscribe/1`.
   """
-  def subscribe(id, filters, sink) do
-    filters =
-      if is_list(filters) do
-        build_filters(filters)
-      else
-        filters
-      end
+  def subscribe(sink, opts \\ [])
 
-    unless Enum.all?(filters, &Solvent.Filter.impl_for/1) do
-      raise ArgumentError, "Argument must be either a filter expression or must implement `Solvent.Filter`. Got: #{inspect filters}"
-    end
+  def subscribe(module, opts) when is_atom(module) and is_list(opts) do
+    subscription = apply(module, :subscription, [opts])
 
-    sub = %Subscription{
-      id: id,
-      filters: filters,
-      sink: sink
-    }
+    subscribe(subscription)
+  end
+
+  def subscribe(sink, opts) do
+    sub = Subscription.new(sink, opts)
 
     subscribe(sub)
   end
@@ -178,23 +133,26 @@ defmodule Solvent do
   @doc """
   Publish an event to the event bus, triggering all subscriber functions.
 
-  Only a type (AKA "topic") is required.
-  All other fields can be supplied using the options.
+  Only a type (AKA "topic") is required. All other fields can be supplied using the options.
   See `Solvent.Event` for details on what that struct contains.
   All values given as options are inserted into the event struct.
 
   ID values are version 7 UUIDs by default, and you don't need to provide them.
-  ## Examples
 
-      Solvent.publish("io.github.cantido.documentation.read")
-      {:ok, "some-random-uuid"}
+  I would recommend using the CloudEvents format for your event's `type` field, which starts with a reversed DNS name, and is dot-separated.
+  This will help avoid collisions with events from other applications.
+
+      Solvent.publish("io.github.cantido.myevent.published")
+      {:ok, "0b06bdb7-06a7-4df9-a825-1fd225ceea43"}
+
+  It is also recommended to provide a `source` option to identify your application, especially if your subscription did not specify a `source`.
+  Otherwise, all events will be published with a default source, and subscriptions will be triggered for every event traveling through Solvent (including events from other applications).
+  A good `source` value is either a fully-qualified domain name, or a UUID in URN format.
 
       iex> Solvent.publish(
       ...>   "io.github.cantido.documentation.read",
       ...>   id: "read-docs-id",
-      ...>   source: "myapp",
-      ...>   datacontenttype: "application/json",
-      ...>   data: ~s({"hello":"world"})
+      ...>   source: "myapp"
       ...> )
       {:ok, {"myapp", "read-docs-id"}}
 

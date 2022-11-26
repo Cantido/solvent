@@ -15,10 +15,9 @@ and making the library better follow the CloudEvents spec.
 
 - The `Solvent.EventStore.fetch!/1` function, which will raise a descriptive error if the event does not exist.
 - You can now pass a `Solvent.Event` struct into `Solvent.publish/2` yourself
-- `Solvent.Event` can now be encoded to and from JSON, and implements `Jason.Encoder`
 - Telemetry events are now documented with `:telemetry_registry`.
 - Added `[:solvent, :event, :published]` telemetry event,
-  dispatched when an event is.
+  dispatched when an event is published.
 - Logger metadata is now added before subscriber functions are executed.
   This data includes:
     - `:solvent_event_type` - The dispatched event's type (AKA topic)
@@ -28,11 +27,9 @@ and making the library better follow the CloudEvents spec.
 
 ### Changed
 
-- *Breaking change*: The type matching argument is now required to be a more complex filter argument.
-  The argument can either be keyword list filter expression (see the `Solvent.Filter` HexDocs),
-  or it can be any struct implementing the `Solvent.Filter` protocol.
-- *Breaking change*: `Solvent.subscribe` no longer accepts literal functions, but module-function-args tuples.
-  This will allow Solvent to support a much wider variety of backends, since an module-function-args tuple can be serialized.
+- *Breaking change*: `Solvent.subscribe` now accepts anything that implements the `Solvent.Sink` protocol.
+  This is implemented for anonymous functions, tuples (which are interpreted as a module-function-args tuple), and PIDs, which will be sent a message.
+  The function signature of `subscribe` also changed such that the sink is the first argument to subscribe.
 - *Breaking change*: Structs from the [`cloudevents`](https://github.com/kevinbader/cloudevents-ex)
   are now the event struct of choice, replacing `Solvent.Event`.
   You can still create these structs with `Solvent.Event.new/2`, but they will now be a version 1.0 `cloudevents` struct.
@@ -41,8 +38,7 @@ and making the library better follow the CloudEvents spec.
 
 ### How to upgrade
 
-- Replace all string type arguments with an exact filter expression
-- Replace all function literals with module-function-args tuples
+- Replace all string type arguments to `Solvent.subscribe` with a `type: "com.example.mytype"` optional argument.
 
 ```elixir
 # Before

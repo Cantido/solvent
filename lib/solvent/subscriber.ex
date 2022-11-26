@@ -60,14 +60,18 @@ defmodule Solvent.Subscriber do
         @solvent_filters
       end
 
-      def subscription do
-        %Solvent.Subscription{
-          id: @solvent_listener_id,
-          sink: {__MODULE__, :run_module, [__MODULE__, @solvent_listener_id, @solvent_auto_ack]},
+      def subscription(opts \\ []) do
+        opts = Keyword.merge(opts, [
+          id: subscriber_id(),
           source: @solvent_source,
           types: @solvent_types,
           filters: Solvent.build_filters(@solvent_filters)
-        }
+        ])
+
+        Solvent.Subscription.new(
+          {__MODULE__, :run_module, [__MODULE__, subscriber_id(), @solvent_auto_ack]},
+          opts
+        )
       end
 
       def auto_ack? do

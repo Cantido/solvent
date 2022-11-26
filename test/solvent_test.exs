@@ -8,7 +8,7 @@ defmodule SolventTest do
   end
 
   test "calls subscriber mod-fun-args" do
-    Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscribermfa.published"]], {Solvent.MessengerHandler, :handle_event, []})
+    Solvent.subscribe({Solvent.MessengerHandler, :handle_event, []}, types: ["subscribermfa.published"])
 
     test_ref = make_ref()
     Solvent.publish("subscribermfa.published", data: {self(), test_ref})
@@ -17,7 +17,7 @@ defmodule SolventTest do
   end
 
   test "calls subscriber PIDs" do
-    Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscriberpid.published"]], self())
+    Solvent.subscribe(self(), types: ["subscriberpid.published"])
 
     {:ok, {expected_source, expected_id}} = Solvent.publish("subscriberpid.published")
 
@@ -30,7 +30,7 @@ defmodule SolventTest do
     test_pid = self()
     test_ref = make_ref()
 
-    Solvent.subscribe(Uniq.UUID.uuid7(), [exact: [type: "subscriberanon.published"]], fn _type, _id -> send test_pid, test_ref end)
+    Solvent.subscribe(fn _type, _id -> send test_pid, test_ref end, types: ["subscriberanon.published"])
 
     Solvent.publish("subscriberanon.published")
 

@@ -1,4 +1,11 @@
 defmodule Solvent.Subscription do
+  @moduledoc """
+  Describes a consumer's wish to receive events, as well as how to deliver them.
+
+  See `new/2` for instructions on how to create one of these structs,
+  and then give that struct to `Solvent.subscribe/1` to being receiving events.
+  """
+
   alias Solvent.Filter
 
   @enforce_keys [:id, :sink]
@@ -10,16 +17,90 @@ defmodule Solvent.Subscription do
     types: []
   ]
 
-  def match?(subscription, event) do
-    source_match?(subscription.source, event) and (filter_match?(subscription.filters, event) or types_match?(subscription.types, event))
+  @doc """
+  Create a new subscription struct.
+
+  This function does not subscribe to the event stream,
+  but once you create a `Solvent.Subscription` struct, you can give it to `Solvent.subscribe/1` to subscribe to events.
+
+  After providing a sink, you can additionally match for a source, multiple types, or provide filters to further match events.
+
+  ## Examples
+
+  To create a subscription for matching all events passing through Solvent, just provide a sink.
+
+      iex> Solvent.Subscription.new({MyModule, :handle_event, []})
+
+  To match all events coming from a single source, provide a `:source` option.
+  It should be a string.
+
+      iex> Solvent.Subscription.new({MyModule, :handle_event, []}, source: "https://myapp.example.com")
+
+  You can also match a set of event types.
+
+      iex> Solvent.Subscription.new({MyModule, :handle_event, []}, types: ["com.example.message.sent", "com.example.message.received"])
+
+  For more complex filtering, provide a struct implementing `Solvent.Filter`.
+  You can build one from a keyword list with `Solvent.build_filters/1`.
+
+      iex> Solvent.Subscription.new({MyModule, :handle_event, []}, filter: Solvent.build_filters([prefix: [type: "com.example."]]))
+
+  Multiple options can be provided in the same subscription.
+
+      iex> Solvent.Subscription.new(
+        {MyModule, :handle_event, []},
+        source: "https://myapp.example.com",
+        types: ["com.example.message.sent", "com.example.message.received"]
+      )
+  """
+  def new(sink, opts \\ []) do
+    id = Keyword.get(opts, :id, Uniq.UUID.uuid7())
+    source = Keyword.get(opts, :source)
+    types = Keyword.get(opts, :types, [])
+    filters = Keyword.get(opts, :filters, [])
+
+    unless String.valid?(id) and String.length(id) > 0 do
+      raise ArgumentError, "The `id` option must be a valid and nonempty string. Got: #{inspect id}"
+    end
+
+    if is_nil(Solvent.Sink.impl_for(sink)) do
+      raise ArgumentError, "The `sink` argument must implement `Solvent.Sink`. Got: #{inspect sink}"
+    end
+
+    unless Enum.all?(filters, &Solvent.Filter.impl_for/1) do
+      raise ArgumentError, "The members of the `filters` argument list must implement `Solvent.Filter`. Got: #{inspect filters}"
+    end
+
+    unless is_nil(source) or String.valid?(source) and String.length(source) > 0 do
+      raise ArgumentError, "The `source` argument must be either nil or a non-empty string. Got: #{inspect source}"
+    end
+
+    unless Enum.all?(types, &(String.length(&1) > 0)) do
+      raise ArgumentError, "The members of the `types` argument list must be non-empty strings. Got: #{inspect types}"
+    end
+
+    %__MODULE__{
+      id: id,
+      sink: sink,
+      source: source,
+      types: types,
+      filters: filters
+    }
   end
 
-  def source_match?(nil, _event), do: true
-  def source_match?(source, event), do: source == event.source
+  @doc """
+  Test if a subscription should deliver a certain event.
+  """
+  def match?(subscription, event) do
+    source_match?(subscription.source, event) and filter_match?(subscription.filters, event) and types_match?(subscription.types, event)
+  end
 
-  def types_match?([], _event), do: true
-  def types_match?(types, event), do: event.type in types
+  defp source_match?(nil, _event), do: true
+  defp source_match?(source, event), do: source == event.source
 
-  def filter_match?([], _event), do: true
-  def filter_match?(filters, event), do: Enum.all?(filters, &Filter.match?(&1, event))
+  defp types_match?([], _event), do: true
+  defp types_match?(types, event), do: event.type in types
+
+  defp filter_match?([], _event), do: true
+  defp filter_match?(filters, event), do: Enum.all?(filters, &Filter.match?(&1, event))
 end
