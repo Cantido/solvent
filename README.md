@@ -31,13 +31,25 @@ and modules that `use` the `Solvent.Subscriber` module.
 
 ```elixir
 # anonymous functions
-Solvent.subscribe(fn event_id -> IO.inspect(event_id) end, source: "https://myapp.example.com", types: ["com.myevent.published"])
+Solvent.subscribe(
+  fn event_id -> IO.inspect(event_id) end,
+  source: "https://myapp.example.com",
+  types: ["com.myevent.published"]
+)
 
 # module-function-args tuples
-Solvent.subscribe({IO, :inspect, []}, source: "https://myapp.example.com", types: ["com.myevent.published"])
+Solvent.subscribe
+  {IO, :inspect, []},
+  source: "https://myapp.example.com",
+  types: ["com.myevent.published"]
+)
 
 # PIDs
-Solvent.subscribe(self(), source: "https://myapp.example.com", types: ["com.myevent.published"])
+Solvent.subscribe(
+  self(),
+  source: "https://myapp.example.com",
+  types: ["com.myevent.published"]
+)
 
 # Subscriber modules
 defmodule MySubscriber do
@@ -78,6 +90,7 @@ You can specify any optional field from the CloudEvent spec, in fact.
 ```elixir
 Solvent.publish(
   "com.myjsonevent.published",
+  source: "https://myapp.example.com",
   datacontenttype: "application/json",
   data: ~s({"foo":"bar"})
 )
