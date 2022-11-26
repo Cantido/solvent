@@ -67,7 +67,7 @@ defmodule Solvent.Subscription do
       raise ArgumentError, "The `sink` argument must implement `Solvent.Sink`. Got: #{inspect sink}"
     end
 
-    unless Enum.all?(filters, &Solvent.Filter.impl_for/1) do
+    unless is_nil(filters) or Enum.all?(filters, &Solvent.Filter.impl_for/1) do
       raise ArgumentError, "The members of the `filters` argument list must implement `Solvent.Filter`. Got: #{inspect filters}"
     end
 
@@ -75,7 +75,7 @@ defmodule Solvent.Subscription do
       raise ArgumentError, "The `source` argument must be either nil or a non-empty string. Got: #{inspect source}"
     end
 
-    unless Enum.all?(types, &(String.length(&1) > 0)) do
+    unless is_nil(types) or Enum.all?(types, &(String.length(&1) > 0)) do
       raise ArgumentError, "The members of the `types` argument list must be non-empty strings. Got: #{inspect types}"
     end
 
@@ -98,9 +98,11 @@ defmodule Solvent.Subscription do
   defp source_match?(nil, _event), do: true
   defp source_match?(source, event), do: source == event.source
 
+  defp types_match?(nil, _event), do: true
   defp types_match?([], _event), do: true
   defp types_match?(types, event), do: event.type in types
 
+  defp filter_match?(nil, _event), do: true
   defp filter_match?([], _event), do: true
   defp filter_match?(filters, event), do: Enum.all?(filters, &Filter.match?(&1, event))
 end

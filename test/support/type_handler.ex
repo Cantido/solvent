@@ -1,7 +1,7 @@
 defmodule Solvent.TypeHandler do
   use Solvent.Subscriber,
     id: "messenger subscriber",
-    types: ["typemodulesubscribe.publish"]
+    types: ["typemodulesubscribe.published"]
 
   require Logger
 

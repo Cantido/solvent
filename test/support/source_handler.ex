@@ -1,7 +1,7 @@
 defmodule Solvent.SourceHandler do
   use Solvent.Subscriber,
     id: "source subscriber",
-    source: "module-source-subscriber"
+    source: "subscriber-module-source"
 
 
   require Logger

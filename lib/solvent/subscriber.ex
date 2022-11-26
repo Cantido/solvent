@@ -69,7 +69,7 @@ defmodule Solvent.Subscriber do
         ])
 
         Solvent.Subscription.new(
-          {__MODULE__, :run_module, [__MODULE__, subscriber_id(), @solvent_auto_ack]},
+          {Solvent.Subscriber, :run_module, [__MODULE__, subscriber_id(), @solvent_auto_ack]},
           opts
         )
       end

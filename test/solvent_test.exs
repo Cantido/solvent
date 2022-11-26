@@ -93,8 +93,7 @@ defmodule SolventTest do
 
   test "can unsubscribe modules" do
     test_ref = make_ref()
-    sub_id = Uniq.UUID.uuid7()
-    Solvent.subscribe(Solvent.MessengerHandler, id: sub_id)
+    {:ok, sub_id} = Solvent.subscribe(Solvent.MessengerHandler, id: Uniq.UUID.uuid7())
     Solvent.unsubscribe(sub_id)
     Solvent.publish("modulesubscribe.published", data: {self(), test_ref})
 
@@ -117,8 +116,9 @@ defmodule SolventTest do
       exact: [type: "multisubscribe.first"],
       exact: [type: "multisubscribe.second"]
     ]]
+    |> Solvent.build_filters()
 
-    Solvent.subscribe(Uniq.UUID.uuid7(), filter, {Solvent.MessengerHandler, :handle_event, []})
+    Solvent.subscribe({Solvent.MessengerHandler, :handle_event, []}, id: Uniq.UUID.uuid7(), filters: filter)
 
     Solvent.publish("multisubscribe.first", data: {self(), test_ref})
 
