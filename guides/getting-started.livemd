@@ -148,10 +148,6 @@ And publish to them like normal
 
 ```elixir
 {:ok, greeting_event_id} = Solvent.publish("com.example.user.created", data: "Rosa")
-
-receive do
-  greeting -> IO.puts(greeting)
-end
 ```
 
 Some features of module subscribers:
