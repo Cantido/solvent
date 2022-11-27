@@ -11,7 +11,11 @@ defmodule Solvent.MixProject do
       package: package(),
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      docs: [
+        main: "Solvent",
+        extras: ["guides/getting-started.livemd"]
+      ]
     ]
   end
 
