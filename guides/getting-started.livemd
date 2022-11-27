@@ -161,7 +161,7 @@ Events in Solvent follow the [CloudEvents specification](https://github.com/clou
 
 <!-- livebook:{"break_markdown":true} -->
 
-Solvent uses struts from the [`cloudevents_ex`](https://github.com/kevinbader/cloudevents-ex) Elixir library to represent events.
+Solvent uses structs from the [`cloudevents_ex`](https://github.com/kevinbader/cloudevents-ex) Elixir library to represent events.
 Struct creation is wrapped by `Solvent.Event.new/2`, which sets some defaults, like a UUID, and the current time.
 
 ```elixir
