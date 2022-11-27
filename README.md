@@ -102,6 +102,11 @@ This small hiccup in an otherwise buttery-smooth developer experience is done in
 Copying large amounts of data between processes can be slow,
 so Solvent stores events in an ETS table and lets you fetch them when you're ready.
 
+## Clustering
+
+Currently, Solvent only communicates on the local node.
+I do plan on building a cluster-aware bus, or an AMQP adapter, or something like that.
+
 ## License
 
 MIT License
