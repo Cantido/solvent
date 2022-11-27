@@ -122,7 +122,6 @@ Solvent.EventStore.ack(event_id, sub_id)
 
 Solvent allows you to subscribe modules to the event bus as well, which gives you some extra tooling and useful defaults.
 To get started, `use` the `Solvent.Subscriber` module.
-You must also provide the `:match_type` option, which can be either a single event type or a list of event types.
 
 The example below is a subscriber that prints messages contained in events.
 
