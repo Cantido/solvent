@@ -1,5 +1,7 @@
 defmodule Solvent.SubscriberStore do
-  @moduledoc false
+  @moduledoc """
+  Stores `Solvent.Subscription` structs in ETS.
+  """
 
   alias Solvent.Subscription
 
@@ -23,8 +25,6 @@ defmodule Solvent.SubscriberStore do
     true = :ets.delete_all_objects(@table_name)
     :ok
   end
-
-  require Logger
 
   def listeners_for(event) do
     listeners = :ets.tab2list(@table_name)

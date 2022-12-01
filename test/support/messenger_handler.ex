@@ -5,7 +5,7 @@ defmodule Solvent.MessengerHandler do
 
   require Logger
 
-  def handle_event(type, event_id) do
+  def handle_event(type, event_id, _listener_id) do
     Logger.debug("Module handler invoked with event ID #{inspect(event_id)} with type #{type}")
 
     case Solvent.EventStore.fetch(event_id) do

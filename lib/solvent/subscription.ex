@@ -8,13 +8,16 @@ defmodule Solvent.Subscription do
 
   alias Solvent.Filter
 
+  @type id :: String.t()
+
   @enforce_keys [:id, :sink]
   defstruct [
     :id,
     :sink,
     :source,
     filters: [],
-    types: []
+    types: [],
+    config: []
   ]
 
   @doc """
@@ -52,12 +55,21 @@ defmodule Solvent.Subscription do
         source: "https://myapp.example.com",
         types: ["com.example.message.sent", "com.example.message.received"]
       )
+
+
+  ## Additional configuration
+
+  You can also configure your subscription with the `:config` key, which accepts a keyword list.
+
+  - `:auto_ack` - Tell Solvent to automatically acknoledge the event once it is done delivering the event to the sink.
+    Do not set this to `true` if you pass off the event ID to be fetched by another process.
   """
   def new(sink, opts \\ []) do
     id = Keyword.get(opts, :id, Uniq.UUID.uuid7())
     source = Keyword.get(opts, :source)
     types = Keyword.get(opts, :types, [])
     filters = Keyword.get(opts, :filters, [])
+    config = Keyword.get(opts, :config, [])
 
     unless String.valid?(id) and String.length(id) > 0 do
       raise ArgumentError, "The `id` option must be a valid and nonempty string. Got: #{inspect id}"
@@ -84,7 +96,8 @@ defmodule Solvent.Subscription do
       sink: sink,
       source: source,
       types: types,
-      filters: filters
+      filters: filters,
+      config: config
     }
   end
 

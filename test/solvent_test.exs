@@ -17,20 +17,21 @@ defmodule SolventTest do
   end
 
   test "calls subscriber PIDs" do
-    Solvent.subscribe(self(), types: ["subscriberpid.published"])
+    {:ok, expected_sub_id} = Solvent.subscribe(self(), types: ["subscriberpid.published"])
 
     {:ok, {expected_source, expected_id}} = Solvent.publish("subscriberpid.published")
 
-    assert_receive {:event, type, id}
+    assert_receive {:event, type, id, subscription_id}
     assert id == {expected_source, expected_id}
     assert type == "subscriberpid.published"
+    assert subscription_id == expected_sub_id
   end
 
   test "calls anonymous functions" do
     test_pid = self()
     test_ref = make_ref()
 
-    Solvent.subscribe(fn _type, _id -> send test_pid, test_ref end, types: ["subscriberanon.published"])
+    Solvent.subscribe(fn _type, _id, _sub_id -> send test_pid, test_ref end, types: ["subscriberanon.published"])
 
     Solvent.publish("subscriberanon.published")
 
@@ -46,10 +47,10 @@ defmodule SolventTest do
       sink: test_pid
     }
 
-    Solvent.subscribe(sub)
+    {:ok, sub_id} = Solvent.subscribe(sub)
     {:ok, id} = Solvent.publish("subscriber.nofilter.published", source: sub.source)
 
-    assert_receive {:event, _type, ^id}
+    assert_receive {:event, _type, ^id, ^sub_id}
   end
 
   test "can subscribe to types" do
@@ -61,10 +62,10 @@ defmodule SolventTest do
       types: ["subscriber.type.published"]
     }
 
-    Solvent.subscribe(sub)
+    {:ok, subscription_id} = Solvent.subscribe(sub)
     {:ok, id} = Solvent.publish("subscriber.type.published")
 
-    assert_receive {:event, _type, ^id}
+    assert_receive {:event, _type, ^id, ^subscription_id}
   end
 
   test "can subscribe modules that select with filters" do

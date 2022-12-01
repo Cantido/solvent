@@ -104,8 +104,7 @@ defmodule Solvent do
 
   > #### Tip {: .tip}
   >
-  > Use the `Solvent.Subscriber` module to make a subscriber that automatically acknowledges events,
-  > along with lots of other nice features.
+  > Use the `Solvent.Subscriber` module to make a self-contained subscriber module.
 
   You can also create a `Solvent.Subscription` struct yourself, and pass it to `subscribe/1`.
   """
@@ -193,7 +192,11 @@ defmodule Solvent do
                   solvent_event_id: event.id,
                   solvent_event_type: event.type
                 )
-                Solvent.Sink.deliver(subscription.sink, event)
+                Solvent.Sink.deliver(subscription.sink, event, subscriber_id)
+
+                if Keyword.get(subscription.config, :auto_ack, false) do
+                  Solvent.EventStore.ack({event.source, event.id}, subscription.id)
+                end
                 {:ok, %{}}
               end
             )

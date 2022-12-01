@@ -4,16 +4,15 @@ defmodule Solvent.EventStore.Base do
 
   Modules using this behavior can be used with the `Solvent.EventStore` module to publish and fetch events.
   """
-  alias Solvent.Event
 
-  @type event_id :: String.t()
-  @type subscriber_id:: String.t()
+  alias Solvent.Event
+  alias Solvent.Subscription
 
   @callback init() :: :ok
-  @callback fetch(event_id()) :: {:ok, Event.t()} | :error
-  @callback fetch!(event_id()) :: Event.t()
-  @callback insert(Event.t(), list(subscriber_id())) :: :ok
-  @callback delete(event_id()) :: :ok
+  @callback fetch(Event.handle()) :: {:ok, Event.t()} | :error
+  @callback fetch!(Event.handle()) :: Event.t()
+  @callback insert(Event.t(), list(Subscription.id())) :: :ok
+  @callback delete(Event.handle()) :: :ok
   @callback delete_all() :: :ok
-  @callback ack(event_id(), subscriber_id()) :: :ok
+  @callback ack(Event.handle(), Subscription.id()) :: :ok
 end
