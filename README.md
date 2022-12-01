@@ -32,7 +32,7 @@ and modules that `use` the `Solvent.Subscriber` module.
 ```elixir
 # anonymous functions
 Solvent.subscribe(
-  fn event_id -> IO.inspect(event_id) end,
+  fn event_id, _subscriber_id -> IO.inspect(event_id) end,
   source: "https://myapp.example.com",
   types: ["com.myevent.published"]
 )
