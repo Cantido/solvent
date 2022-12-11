@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2022-11-26
+
 These changes reflect what I've learned while integrating Solvent into other projects,
 and while working on projects that also work on CloudEvents.
 They have a focus mainly in two places: making more information available to users,
@@ -58,5 +60,6 @@ Solvent.subscribe([exact: [type: "com.example.event.published"]], {IO, :puts, ["
   This was done so that you don't have to fetch the command just to know what
   its type is, which will be useful in handlers that accept multiple types.
 
-[Unreleased]: https://github.com/Cantido/solvent/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Cantido/solvent/compare/v0.3.0...HEAD
+[0.2.0]: https://github.com/Cantido/solvent/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Cantido/solvent/compare/v0.1.0...v0.2.0
