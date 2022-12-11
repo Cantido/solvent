@@ -40,14 +40,14 @@ and making the library better follow the CloudEvents spec.
 
 ### How to upgrade
 
-- Replace all string type arguments to `Solvent.subscribe` with a `type: "com.example.mytype"` optional argument.
+- Replace all string type arguments to `Solvent.subscribe` with a `types: ["com.example.mytype"]` optional argument, after the function you are subscribing.
 
 ```elixir
 # Before
 Solvent.subscribe("com.example.event.published", fn _, _ -> IO.puts("Hello!") end)
 
 # After
-Solvent.subscribe(fn _, _ -> IO.puts("Hello!") end, type: "com.example.event.published")
+Solvent.subscribe(fn _, _ -> IO.puts("Hello!") end, types: ["com.example.event.published"])
 ```
 
 ## [0.2.0]
