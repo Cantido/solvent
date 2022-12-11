@@ -44,10 +44,10 @@ and making the library better follow the CloudEvents spec.
 
 ```elixir
 # Before
-Solvent.subscribe("com.example.event.published", fn -> IO.puts("Hello!") end)
+Solvent.subscribe("com.example.event.published", fn _, _ -> IO.puts("Hello!") end)
 
 # After
-Solvent.subscribe([exact: [type: "com.example.event.published"]], {IO, :puts, ["Hello!"]})
+Solvent.subscribe(fn _, _ -> IO.puts("Hello!") end, type: "com.example.event.published")
 ```
 
 ## [0.2.0]
