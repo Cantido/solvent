@@ -7,7 +7,7 @@ defmodule Solvent.Event do
   See `new/2` for valid values and their defaults.
   """
 
-  @type t :: Cloudevents.Format.V_1_0.t()
+  @type t :: Cloudevents.Format.V_1_0.Event.t()
   @type source :: String.t()
   @type id :: String.t()
   @type handle :: {source(), id()}
