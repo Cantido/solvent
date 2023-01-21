@@ -44,10 +44,9 @@ defmodule Solvent.EventStore.ETS do
   def fetch!(id) do
     case fetch(id) do
       {:ok, event} -> event
-      :error -> raise "Event with id #{inspect id} not found"
+      :error -> raise "Event with id #{inspect(id)} not found"
     end
   end
-
 
   @doc """
   Insert a new event into storage, along with all listeners that need to acknowledge it before it can be deleted.
@@ -92,7 +91,10 @@ defmodule Solvent.EventStore.ETS do
     count_pending = :ets.match(@ack_table, {event_id, :"$1"}) |> Enum.count()
 
     if count_pending == 0 && count_deleted > 0 do
-      Logger.debug("Event #{inspect {event_source, event_id}} has been acked by all subscribers. Deleting it.")
+      Logger.debug(
+        "Event #{inspect({event_source, event_id})} has been acked by all subscribers. Deleting it."
+      )
+
       delete({event_source, event_id})
     end
 

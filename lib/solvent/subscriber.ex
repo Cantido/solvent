@@ -43,11 +43,10 @@ defmodule Solvent.Subscriber do
       @solvent_source unquote(Keyword.get(usage_opts, :source))
       @solvent_types unquote(Keyword.get(usage_opts, :types))
       @solvent_filters unquote(Keyword.get(usage_opts, :filters, []))
-      @solvent_config unquote(Keyword.get(usage_opts, :config, [auto_ack: true]))
+      @solvent_config unquote(Keyword.get(usage_opts, :config, auto_ack: true))
 
       def subscription(opts \\ []) do
-        sub_opts =
-          Keyword.take(opts, [:id, :sink, :source, :types, :filters, :config])
+        sub_opts = Keyword.take(opts, [:id, :sink, :source, :types, :filters, :config])
 
         opts =
           [
@@ -58,7 +57,6 @@ defmodule Solvent.Subscriber do
             config: @solvent_config
           ]
           |> Keyword.merge(sub_opts)
-
 
         Solvent.Subscription.new({__MODULE__, :handle_event, []}, opts)
       end

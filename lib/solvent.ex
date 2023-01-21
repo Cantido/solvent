@@ -1,40 +1,43 @@
 defmodule Solvent do
   use TelemetryRegistry
 
-  telemetry_event %{
+  telemetry_event(%{
     event: [:solvent, :event, :published],
     description: "Emitted when an event is published",
     measurements: "%{}",
-    metadata: "%{event_source: String.t(), event_id: String.t(), event_type: String.t(), subscriber_count: non_neg_integer()}"
-  }
+    metadata:
+      "%{event_source: String.t(), event_id: String.t(), event_type: String.t(), subscriber_count: non_neg_integer()}"
+  })
 
-  telemetry_event %{
+  telemetry_event(%{
     event: [:solvent, :subscriber, :processing, :start],
     description: "Emitted when a subscriber begins processing an event",
     measurements: "%{}",
-    metadata: "%{subscriber_id: String.t(), event_source: String.t(), event_id: String.t(), event_type: String.t()}"
-  }
+    metadata:
+      "%{subscriber_id: String.t(), event_source: String.t(), event_id: String.t(), event_type: String.t()}"
+  })
 
-  telemetry_event %{
+  telemetry_event(%{
     event: [:solvent, :subscriber, :processing, :stop],
     description: "Emitted when a subscriber finishes processing an event",
     measurements: "%{duration: non_neg_integer()}",
-    metadata: "%{subscriber_id: String.t(), event_source: String.t(), event_id: String.t(), event_type: String.t()}"
-  }
+    metadata:
+      "%{subscriber_id: String.t(), event_source: String.t(), event_id: String.t(), event_type: String.t()}"
+  })
 
-  telemetry_event %{
+  telemetry_event(%{
     event: [:solvent, :subscriber, :subscribing, :start],
     description: "Emitted when a subscriber begins subscribing to the event stream",
     measurements: "%{}",
     metadata: "%{subscriber_id: String.t(), filter: String.t()}"
-  }
+  })
 
-  telemetry_event %{
+  telemetry_event(%{
     event: [:solvent, :subscriber, :subscribing, :stop],
     description: "Emitted when a subscriber is finished subscribing to the event stream",
     measurements: "%{duration: non_neg_integer()}",
     metadata: "%{subscriber_id: String.t(), filter: String.t()}"
-  }
+  })
 
   @moduledoc """
   Solvent is an event bus built to be fast and easy-to-use,
@@ -169,22 +172,34 @@ defmodule Solvent do
       subscribers = Solvent.SubscriberStore.listeners_for(event)
       subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
 
-      Logger.debug("Publishing event #{event.id}, (#{event.type}). Subscribers are: #{inspect subscriber_ids, pretty: true}")
+      Logger.debug(
+        "Publishing event #{event.id}, (#{event.type}). Subscribers are: #{inspect(subscriber_ids, pretty: true)}"
+      )
 
       :telemetry.execute(
         [:solvent, :event, :published],
         %{},
-        %{event_source: event.source, event_id: event.id, event_type: event.type, subscriber_count: Enum.count(subscribers)}
+        %{
+          event_source: event.source,
+          event_id: event.id,
+          event_type: event.type,
+          subscriber_count: Enum.count(subscribers)
+        }
       )
 
       if Enum.count(subscribers) > 0 do
-          :ok = Solvent.EventStore.insert(event, subscriber_ids)
+        :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
         notifier_fun = fn {subscriber_id, subscription} ->
           Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
             :telemetry.span(
               [:solvent, :subscriber, :processing],
-              %{subscriber_id: subscriber_id, event_source: event.source, event_id: event.id, event_type: event.type},
+              %{
+                subscriber_id: subscriber_id,
+                event_source: event.source,
+                event_id: event.id,
+                event_type: event.type
+              },
               fn ->
                 Logger.metadata(
                   solvent_subscriber_id: subscriber_id,
@@ -192,11 +207,13 @@ defmodule Solvent do
                   solvent_event_id: event.id,
                   solvent_event_type: event.type
                 )
+
                 Solvent.Sink.deliver(subscription.sink, event, subscriber_id)
 
                 if Keyword.get(subscription.config, :auto_ack, false) do
                   Solvent.EventStore.ack({event.source, event.id}, subscription.id)
                 end
+
                 {:ok, %{}}
               end
             )
@@ -210,7 +227,9 @@ defmodule Solvent do
         )
         |> Stream.run()
       else
-        Logger.warn("No subscribers matched event type #{event.type}. Solvent will not insert the event into the event store.")
+        Logger.warn(
+          "No subscribers matched event type #{event.type}. Solvent will not insert the event into the event store."
+        )
       end
     end)
 
