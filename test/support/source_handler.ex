@@ -1,4 +1,7 @@
 defmodule Solvent.SourceHandler do
+  @moduledoc """
+  A module subscriber that handles all events with the source `"subscriber-module-source"`.
+  """
   use Solvent.Subscriber,
     id: "source subscriber",
     source: "subscriber-module-source"

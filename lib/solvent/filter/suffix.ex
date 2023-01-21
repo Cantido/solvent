@@ -1,4 +1,8 @@
 defmodule Solvent.Filter.Suffix do
+  @moduledoc """
+  A filter that matches property strings that end with the given value.
+  """
+
   defstruct properties: %{}
 
   defimpl Solvent.Filter do

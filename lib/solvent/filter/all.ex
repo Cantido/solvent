@@ -1,4 +1,7 @@
 defmodule Solvent.Filter.All do
+  @moduledoc """
+  A filter that matches when all subfilters match.
+  """
   defstruct subfilters: []
 
   defimpl Solvent.Filter do

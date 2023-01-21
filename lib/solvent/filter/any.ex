@@ -1,4 +1,7 @@
 defmodule Solvent.Filter.Any do
+  @moduledoc """
+  A filter that matches when at least one of the given subfilters matches.
+  """
   defstruct subfilters: []
 
   defimpl Solvent.Filter do

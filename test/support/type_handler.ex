@@ -1,4 +1,7 @@
 defmodule Solvent.TypeHandler do
+  @moduledoc """
+  A module subscriber that subscribes to events of type `"typemodulesubscribe.published"`.
+  """
   use Solvent.Subscriber,
     id: "messenger subscriber",
     types: ["typemodulesubscribe.published"]

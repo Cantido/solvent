@@ -71,25 +71,11 @@ defmodule Solvent.Subscription do
     filters = Keyword.get(opts, :filters, [])
     config = Keyword.get(opts, :config, [])
 
-    unless String.valid?(id) and String.length(id) > 0 do
-      raise ArgumentError, "The `id` option must be a valid and nonempty string. Got: #{inspect id}"
-    end
-
-    if is_nil(Solvent.Sink.impl_for(sink)) do
-      raise ArgumentError, "The `sink` argument must implement `Solvent.Sink`. Got: #{inspect sink}"
-    end
-
-    unless is_nil(filters) or Enum.all?(filters, &Solvent.Filter.impl_for/1) do
-      raise ArgumentError, "The members of the `filters` argument list must implement `Solvent.Filter`. Got: #{inspect filters}"
-    end
-
-    unless is_nil(source) or String.valid?(source) and String.length(source) > 0 do
-      raise ArgumentError, "The `source` argument must be either nil or a non-empty string. Got: #{inspect source}"
-    end
-
-    unless is_nil(types) or Enum.all?(types, &(String.length(&1) > 0)) do
-      raise ArgumentError, "The members of the `types` argument list must be non-empty strings. Got: #{inspect types}"
-    end
+    validate_id(id)
+    validate_sink(sink)
+    validate_filters(filters)
+    validate_source(source)
+    validate_types(types)
 
     %__MODULE__{
       id: id,
@@ -101,11 +87,48 @@ defmodule Solvent.Subscription do
     }
   end
 
+  defp validate_id(id) do
+    unless String.valid?(id) and String.length(id) > 0 do
+      raise ArgumentError,
+            "The `id` option must be a valid and nonempty string. Got: #{inspect(id)}"
+    end
+  end
+
+  defp validate_sink(sink) do
+    if is_nil(Solvent.Sink.impl_for(sink)) do
+      raise ArgumentError,
+            "The `sink` argument must implement `Solvent.Sink`. Got: #{inspect(sink)}"
+    end
+  end
+
+  defp validate_filters(filters) do
+    unless is_nil(filters) or Enum.all?(filters, &Solvent.Filter.impl_for/1) do
+      raise ArgumentError,
+            "The members of the `filters` argument list must implement `Solvent.Filter`. Got: #{inspect(filters)}"
+    end
+  end
+
+  defp validate_source(source) do
+    unless is_nil(source) or (String.valid?(source) and String.length(source) > 0) do
+      raise ArgumentError,
+            "The `source` argument must be either nil or a non-empty string. Got: #{inspect(source)}"
+    end
+  end
+
+  defp validate_types(types) do
+    unless is_nil(types) or Enum.all?(types, &(String.length(&1) > 0)) do
+      raise ArgumentError,
+            "The members of the `types` argument list must be non-empty strings. Got: #{inspect(types)}"
+    end
+  end
+
   @doc """
   Test if a subscription should deliver a certain event.
   """
   def match?(subscription, event) do
-    source_match?(subscription.source, event) and filter_match?(subscription.filters, event) and types_match?(subscription.types, event)
+    source_match?(subscription.source, event) and
+      filter_match?(subscription.filters, event) and
+      types_match?(subscription.types, event)
   end
 
   defp source_match?(nil, _event), do: true

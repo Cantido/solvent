@@ -1,4 +1,7 @@
 defmodule Solvent.Filter.Prefix do
+  @moduledoc """
+  A filter that matches a property beginning with a certain value.
+  """
   defstruct properties: %{}
 
   defimpl Solvent.Filter do

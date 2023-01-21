@@ -1,4 +1,8 @@
 defmodule Solvent.MessengerHandler do
+  @moduledoc """
+  A module subscriber that subscribes to the type `"modulesubscribe.published"` and
+  expects a `{pid, ref}` tuple in the event's data, to which it will send the ref back.
+  """
   use Solvent.Subscriber,
     id: "messenger subscriber",
     filters: [exact: [type: "modulesubscribe.published"]]

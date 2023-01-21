@@ -1,4 +1,7 @@
 defmodule Solvent.Filter.Exact do
+  @moduledoc """
+  A filter that matches a property with a certain value.
+  """
   defstruct properties: %{}
 
   defimpl Solvent.Filter do
