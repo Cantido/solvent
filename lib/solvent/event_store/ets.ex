@@ -86,16 +86,16 @@ defmodule Solvent.EventStore.ETS do
   Acknowledge that a listener has finished processing the event.
   """
   @impl true
-  def ack({event_source, event_id}, listener_id) do
-    count_deleted = :ets.match_delete(@ack_table, {{event_source, event_id}, listener_id})
-    count_pending = :ets.match(@ack_table, {event_id, :"$1"}) |> Enum.count()
+  def ack(event_handle, listener_id) do
+    count_deleted = :ets.match_delete(@ack_table, {event_handle, listener_id})
+    count_pending = :ets.match(@ack_table, {event_handle, :"$1"}) |> Enum.count()
 
     if count_pending == 0 && count_deleted > 0 do
       Logger.debug(
-        "Event #{inspect({event_source, event_id})} has been acked by all subscribers. Deleting it."
+        "Event #{inspect(event_handle)} has been acked by all subscribers. Deleting it."
       )
 
-      delete({event_source, event_id})
+      delete(event_handle)
     end
 
     :ok
