@@ -56,6 +56,9 @@ defmodule Solvent.EventStore.ETS do
   @impl true
   def insert(event, pending_ack) do
     Enum.each(pending_ack, fn sub_id ->
+      unless is_binary(sub_id) do
+        raise ArgumentError, "Pending acknowledgement list must be subscriber IDs"
+      end
       true = :ets.insert(@ack_table, {{event.source, event.id}, sub_id})
     end)
 
@@ -86,11 +89,12 @@ defmodule Solvent.EventStore.ETS do
   Acknowledge that a listener has finished processing the event.
   """
   @impl true
-  def ack(event_handle, listener_id) do
-    count_deleted = :ets.match_delete(@ack_table, {event_handle, listener_id})
+  def ack(event_handle, subscription_id) when is_binary(subscription_id) do
+    true = :ets.match_delete(@ack_table, {event_handle, subscription_id})
+
     count_pending = :ets.match(@ack_table, {event_handle, :"$1"}) |> Enum.count()
 
-    if count_pending == 0 && count_deleted > 0 do
+    if count_pending == 0 do
       Logger.debug(
         "Event #{inspect(event_handle)} has been acked by all subscribers. Deleting it."
       )

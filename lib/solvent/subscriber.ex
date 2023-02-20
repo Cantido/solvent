@@ -48,15 +48,17 @@ defmodule Solvent.Subscriber do
       def subscription(opts \\ []) do
         sub_opts = Keyword.take(opts, [:id, :sink, :source, :types, :filters, :config])
 
+        merged_config = Keyword.merge(@solvent_config, Keyword.get(sub_opts, :config, []))
+
         opts =
           [
             id: @solvent_subscription_id,
             source: @solvent_source,
             types: @solvent_types,
             filters: Solvent.build_filters(@solvent_filters),
-            config: @solvent_config
           ]
           |> Keyword.merge(sub_opts)
+          |> Keyword.put(:config, merged_config)
 
         Solvent.Subscription.new({__MODULE__, :handle_event, []}, opts)
       end

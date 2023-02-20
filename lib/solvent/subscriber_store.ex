@@ -31,7 +31,7 @@ defmodule Solvent.SubscriberStore do
 
     Task.Supervisor.async_stream(Solvent.TaskSupervisor, listeners, fn {id, sub} ->
       if Subscription.match?(sub, event) do
-        {id, sub}
+        sub
       end
     end)
     |> Stream.reject(fn {:ok, sub} -> is_nil(sub) end)

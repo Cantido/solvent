@@ -170,7 +170,7 @@ defmodule Solvent do
   def publish(event, _opts) do
     Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
       subscribers = Solvent.SubscriberStore.listeners_for(event)
-      subscriber_ids = Enum.map(subscribers, &elem(&1, 1)) |> Enum.uniq()
+      subscriber_ids = Enum.map(subscribers, & &1.id) |> Enum.uniq()
 
       Logger.debug(
         "Publishing event #{event.id}, (#{event.type}). Subscribers are: #{inspect(subscriber_ids, pretty: true)}"
@@ -190,25 +190,25 @@ defmodule Solvent do
       if Enum.count(subscribers) > 0 do
         :ok = Solvent.EventStore.insert(event, subscriber_ids)
 
-        notifier_fun = fn {subscriber_id, subscription} ->
+        notifier_fun = fn subscription ->
           Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
             :telemetry.span(
               [:solvent, :subscriber, :processing],
               %{
-                subscriber_id: subscriber_id,
+                subscriber_id: subscription.id,
                 event_source: event.source,
                 event_id: event.id,
                 event_type: event.type
               },
               fn ->
                 Logger.metadata(
-                  solvent_subscriber_id: subscriber_id,
+                  solvent_subscriber_id: subscription.id,
                   solvent_event_source: event.source,
                   solvent_event_id: event.id,
                   solvent_event_type: event.type
                 )
 
-                Solvent.Sink.deliver(subscription.sink, event, subscriber_id)
+                Solvent.Sink.deliver(subscription.sink, event, subscription.id)
 
                 if Keyword.get(subscription.config, :auto_ack, false) do
                   Solvent.EventStore.ack({event.source, event.id}, subscription.id)
