@@ -13,30 +13,51 @@ defmodule Solvent.EventStore do
   """
 
 
+  @doc """
+  Initialize the configured store.
+  """
   def init do
     apply(store(), :init, [])
   end
 
+  @doc """
+  Insert an event into the event store, along with the ACKs to expect before the event is cleaned up.
+  """
   def insert(event, expected_acks) do
     apply(store(), :insert, [event, expected_acks])
   end
 
+  @doc """
+  Get an event by ID. Returns `{:ok, event}` or `:error`.
+  """
   def fetch(event_id) do
     apply(store(), :fetch, [event_id])
   end
 
+  @doc """
+  Get an event by ID. Raises if the event does not exist.
+  """
   def fetch!(event_id) do
     apply(store(), :fetch!, [event_id])
   end
 
+  @doc """
+  Remove an event from the event store.
+  """
   def delete(event_id) do
     apply(store(), :delete, [event_id])
   end
 
+  @doc """
+  Remove all events from the event store.
+  """
   def delete_all do
     apply(store(), :delete_all, [])
   end
 
+  @doc """
+  Acknowledge that an event was processed, allowing it to be cleaned up.
+  """
   def ack({event_source, event_id}, listener_id) do
     apply(store(), :ack, [{event_source, event_id}, listener_id])
   end
