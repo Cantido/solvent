@@ -54,6 +54,12 @@ defmodule Solvent.EventStore.ETS do
   This does not activate any subscribers, use `Solvent.publish/2` for that.
   """
   @impl true
+  def insert(event, pending_acks)
+
+  def insert(_event, []) do
+    :ok
+  end
+
   def insert(event, pending_ack) do
     Enum.each(pending_ack, fn sub_id ->
       unless is_binary(sub_id) do
