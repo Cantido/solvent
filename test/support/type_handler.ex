@@ -15,6 +15,7 @@ defmodule Solvent.TypeHandler do
       {:ok, event} ->
         {pid, ref} = event.data
         send(pid, ref)
+
       :error ->
         nil
     end

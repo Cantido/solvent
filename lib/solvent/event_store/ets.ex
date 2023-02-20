@@ -70,6 +70,7 @@ defmodule Solvent.EventStore.ETS do
       unless is_binary(sub_id) do
         raise ArgumentError, "Pending acknowledgement list must be subscriber IDs"
       end
+
       true = :ets.insert(@ack_table, {{event.source, event.id}, sub_id})
     end)
 

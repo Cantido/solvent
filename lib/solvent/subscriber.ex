@@ -55,7 +55,7 @@ defmodule Solvent.Subscriber do
             id: @solvent_subscription_id,
             source: @solvent_source,
             types: @solvent_types,
-            filters: Solvent.build_filters(@solvent_filters),
+            filters: Solvent.build_filters(@solvent_filters)
           ]
           |> Keyword.merge(sub_opts)
           |> Keyword.put(:config, merged_config)

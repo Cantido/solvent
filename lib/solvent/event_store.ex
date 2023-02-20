@@ -12,7 +12,6 @@ defmodule Solvent.EventStore do
   Any module configured in this way must implement the `Solvent.EventStore.Base` behaviour.
   """
 
-
   @doc """
   Initialize the configured store.
   """

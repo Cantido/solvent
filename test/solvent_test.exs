@@ -8,7 +8,9 @@ defmodule SolventTest do
   end
 
   test "calls subscriber mod-fun-args" do
-    Solvent.subscribe({Solvent.MessengerHandler, :handle_event, []}, types: ["subscribermfa.published"])
+    Solvent.subscribe({Solvent.MessengerHandler, :handle_event, []},
+      types: ["subscribermfa.published"]
+    )
 
     test_ref = make_ref()
     Solvent.publish("subscribermfa.published", data: {self(), test_ref})
@@ -31,7 +33,9 @@ defmodule SolventTest do
     test_pid = self()
     test_ref = make_ref()
 
-    Solvent.subscribe(fn _type, _id, _sub_id -> send test_pid, test_ref end, types: ["subscriberanon.published"])
+    Solvent.subscribe(fn _type, _id, _sub_id -> send(test_pid, test_ref) end,
+      types: ["subscriberanon.published"]
+    )
 
     Solvent.publish("subscriberanon.published")
 
@@ -79,7 +83,11 @@ defmodule SolventTest do
   test "can subscribe modules that select with sources" do
     test_ref = make_ref()
     Solvent.subscribe(Solvent.SourceHandler, id: Uniq.UUID.uuid7())
-    Solvent.publish("sourcemodulesubscribe.published", source: "subscriber-module-source", data: {self(), test_ref})
+
+    Solvent.publish("sourcemodulesubscribe.published",
+      source: "subscriber-module-source",
+      data: {self(), test_ref}
+    )
 
     assert_receive ^test_ref
   end
@@ -118,13 +126,20 @@ defmodule SolventTest do
 
   test "can subscribe a function to multiple event types at once" do
     test_ref = make_ref()
-    filter = [any: [
-      exact: [type: "multisubscribe.first"],
-      exact: [type: "multisubscribe.second"]
-    ]]
-    |> Solvent.build_filters()
 
-    Solvent.subscribe({Solvent.MessengerHandler, :handle_event, []}, id: Uniq.UUID.uuid7(), filters: filter)
+    filter =
+      [
+        any: [
+          exact: [type: "multisubscribe.first"],
+          exact: [type: "multisubscribe.second"]
+        ]
+      ]
+      |> Solvent.build_filters()
+
+    Solvent.subscribe({Solvent.MessengerHandler, :handle_event, []},
+      id: Uniq.UUID.uuid7(),
+      filters: filter
+    )
 
     Solvent.publish("multisubscribe.first", data: {self(), test_ref})
 

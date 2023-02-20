@@ -6,7 +6,6 @@ defmodule Solvent.SourceHandler do
     id: "source subscriber",
     source: "subscriber-module-source"
 
-
   require Logger
 
   def handle_event(type, event_id, _listener_id) do
@@ -16,6 +15,7 @@ defmodule Solvent.SourceHandler do
       {:ok, event} ->
         {pid, ref} = event.data
         send(pid, ref)
+
       :error ->
         nil
     end

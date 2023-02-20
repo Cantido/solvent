@@ -16,6 +16,7 @@ defmodule Solvent.MessengerHandler do
       {:ok, event} ->
         {pid, ref} = event.data
         send(pid, ref)
+
       :error ->
         raise "Event not found"
     end
