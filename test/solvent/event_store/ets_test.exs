@@ -2,15 +2,13 @@ defmodule Solvent.EventStore.ETSTest do
   use ExUnit.Case, async: true
   alias Solvent.EventStore.ETS, as: ETSStore
   alias Solvent.Event
-  import Solvent.EventFixtures
-  import Solvent.SubscriberFixtures
 
   doctest Solvent.EventStore.ETS
 
   test "event can be fetched after insert" do
     event = Event.new("eventstoretest.fetch")
     handle = {event.source, event.id}
-    sub_id = subscriber_id()
+    sub_id = Uniq.UUID.uuid7()
 
     :ok = ETSStore.insert(event, [sub_id])
 
@@ -20,11 +18,20 @@ defmodule Solvent.EventStore.ETSTest do
     assert event.id == fetched_event.id
   end
 
+  test "event is not inserted if it has no subscribers" do
+    event = Event.new("eventstoretest.fetch")
+    handle = {event.source, event.id}
+
+    :ok = ETSStore.insert(event, [])
+
+    assert :error == ETSStore.fetch(handle)
+  end
+
   test "event is deleted after all subscribers ack" do
     event = Event.new("eventstoretest.fetch")
     handle = {event.source, event.id}
-    sub1 = subscriber_id()
-    sub2 = subscriber_id()
+    sub1 = Uniq.UUID.uuid7()
+    sub2 = Uniq.UUID.uuid7()
 
     :ok = ETSStore.insert(event, [sub1, sub2])
 
