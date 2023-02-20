@@ -8,6 +8,9 @@ defmodule Solvent.EventStore.ETS do
 
   The event store is initialized by the Solvent supervisor,
   so no setup work is necessary to use the store.
+
+  This event store can send messages to other processes when it changes,
+  see `debug_subscribe/1` for more information.
   """
 
   require Logger
@@ -16,12 +19,14 @@ defmodule Solvent.EventStore.ETS do
 
   @table_name :solvent_event_store
   @ack_table :solvent_event_pending_ack
+  @debug_subscribers_table :solvent_debug_subscribers
 
   @doc false
   @impl true
   def init do
     :ets.new(@table_name, [:set, :public, :named_table])
     :ets.new(@ack_table, [:bag, :public, :named_table])
+    :ets.new(@debug_subscribers_table, [:set, :public, :named_table])
   end
 
   @doc """
@@ -69,6 +74,7 @@ defmodule Solvent.EventStore.ETS do
     end)
 
     true = :ets.insert(@table_name, {{event.source, event.id}, event})
+    notify_debug_subscribers({:inserted, event, pending_ack})
     :ok
   end
 
@@ -78,6 +84,7 @@ defmodule Solvent.EventStore.ETS do
   @impl true
   def delete({event_source, event_id}) do
     true = :ets.delete(@table_name, {event_source, event_id})
+    notify_debug_subscribers({:deleted, {event_source, event_id}})
     :ok
   end
 
@@ -88,6 +95,7 @@ defmodule Solvent.EventStore.ETS do
   def delete_all do
     true = :ets.delete_all_objects(@table_name)
     true = :ets.delete_all_objects(@ack_table)
+    notify_debug_subscribers(:all_deleted)
     :ok
   end
 
@@ -97,6 +105,8 @@ defmodule Solvent.EventStore.ETS do
   @impl true
   def ack(event_handle, subscription_id) when is_binary(subscription_id) do
     true = :ets.match_delete(@ack_table, {event_handle, subscription_id})
+
+    notify_debug_subscribers({:acked, event_handle, subscription_id})
 
     count_pending = :ets.match(@ack_table, {event_handle, :"$1"}) |> Enum.count()
 
@@ -109,5 +119,40 @@ defmodule Solvent.EventStore.ETS do
     end
 
     :ok
+  end
+
+  @doc """
+  Subscribe a process to receive messages when the table changes.
+
+  The list of processes subscribed by this function is _not_ cleared when `delete_all/0` is called.
+  Call `debug_unsubscribe/1` to remove a process from the debug subscribers list.
+
+  The given PID will be sent the following tuples when the corresponding events occur:
+
+  - `{:inserted, event, ack_ids}` - sent when an event is inserted. If no acknowledgement IDs were provided, then this message _will not_ be sent.
+  - `{:deleted, event_handle}` - sent when an event is removed from the table.
+  - `:all_deleted` - sent when the event store is cleared.
+  - `{:acked, event_handle, subscription_id}` - sent when a subscriber acknowledges an event.
+  """
+  def debug_subscribe(pid) do
+    true = :ets.insert(@debug_subscribers_table, {pid})
+    :ok
+  end
+
+  @doc """
+  Remove a process from the list of debug subscribers.
+  The given process will no longer receive messages when the event store changes.
+  """
+  def debug_unsubscribe(pid) do
+    true = :ets.match_delete(@debug_subscribers_table, {pid})
+    :ok
+  end
+
+  defp notify_debug_subscribers(payload) do
+    :ets.match(@debug_subscribers_table, :"$1")
+    |> List.flatten()
+    |> Enum.each(fn {pid} ->
+      send(pid, payload)
+    end)
   end
 end

@@ -102,12 +102,17 @@ defmodule SolventTest do
   end
 
   test "modules auto-ack which deletes events" do
+    :ok = Solvent.EventStore.ETS.debug_subscribe(self())
+
     test_ref = make_ref()
-    Solvent.subscribe(Solvent.MessengerHandler, id: Uniq.UUID.uuid7())
+    sub_id = Uniq.UUID.uuid7()
+    Solvent.subscribe(Solvent.MessengerHandler, id: sub_id)
     {:ok, event_id} = Solvent.publish("modulesubscribe.published", data: {self(), test_ref})
 
     assert_receive ^test_ref
-    Process.sleep(100)
+    assert_receive {:acked, _handle, ^sub_id}
+    assert_receive {:deleted, _handle}
+
     assert :error == Solvent.EventStore.fetch(event_id)
   end
 
