@@ -48,7 +48,7 @@ defmodule Solvent.SubscriberStore do
   @doc """
   Returns a stream of all subscriptions in the store that match the given event.
   """
-  @spec listeners_for(Solvent.Event.t()) :: [Solvent.Subscription.t()]
+  @spec listeners_for(Solvent.Event.t()) :: Enumerable.t(Solvent.Subscription.t())
   def listeners_for(event) do
     listeners = :ets.tab2list(@table_name)
 

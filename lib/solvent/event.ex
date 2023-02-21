@@ -8,8 +8,9 @@ defmodule Solvent.Event do
   """
 
   @type t :: Cloudevents.Format.V_1_0.Event.t()
-  @type source :: String.t()
   @type id :: String.t()
+  @type source :: String.t()
+  @type type :: String.t()
   @type handle :: {source(), id()}
   @type property_key ::
     :specversion |
@@ -22,6 +23,7 @@ defmodule Solvent.Event do
     :datacontenttype |
     :dataschema |
     String.t()
+  @type property_value :: any()
 
   @doc """
   Create a new event.

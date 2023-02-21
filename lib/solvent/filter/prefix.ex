@@ -4,7 +4,7 @@ defmodule Solvent.Filter.Prefix do
   """
 
   @type t :: %__MODULE__{
-    properties: %{Solvent.Event.property_key() => String.t()}
+    properties: %{Solvent.Event.property_key() => Solvent.Event.property_value()}
   }
 
   defstruct properties: %{}
