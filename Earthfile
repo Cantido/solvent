@@ -40,6 +40,7 @@ check:
   RUN apk add git reuse
 
   COPY --dir lib/ test/ guides/ ./
+  COPY .formatter.exs .
 
   RUN mix check
 
