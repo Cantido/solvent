@@ -16,15 +16,13 @@ all-check:
   BUILD +check \
     --ELIXIR_VERSION=1.14.2 \
     --ELIXIR_VERSION=1.13.4 \
-    --ELIXIR_VERSION=1.12.3 \
-    --ELIXIR_VERSION=1.11.4
+    --ELIXIR_VERSION=1.12.3
 
 all-test-unlocked:
   BUILD +test-unlocked \
     --ELIXIR_VERSION=1.14.2 \
     --ELIXIR_VERSION=1.13.4 \
-    --ELIXIR_VERSION=1.12.3 \
-    --ELIXIR_VERSION=1.11.4
+    --ELIXIR_VERSION=1.12.3
 
 deps:
   FROM hexpm/elixir:${ELIXIR_VERSION}-erlang-${ERLANG_VERSION}-alpine-${ALPINE_VERSION}
