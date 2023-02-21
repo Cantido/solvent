@@ -46,7 +46,7 @@ defmodule Solvent.MixProject do
       {:credo, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:doctor, ">= 0.0.0", only: :dev, runtime: false},
-      {:ex_check, "~> 0.14.0", only: :dev, runtime: false},
+      {:ex_check, "~> 0.15.0", only: :dev, runtime: false},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:jason, "~> 1.3"},
       {:mix_audit, ">= 0.0.0", only: [:dev], runtime: false},
