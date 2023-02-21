@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.Filter.Not do
   @moduledoc """
   A filter that inverts another filter.

@@ -2,4 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-ExUnit.start(capture_log: true)
+[
+  tools: [
+    {:reuse, ["reuse", "lint"]}
+  ]
+]

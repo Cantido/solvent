@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.SubscriptionStore do
   @moduledoc """
   Stores `Solvent.Subscription` structs in ETS.

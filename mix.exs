@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.MixProject do
   use Mix.Project
 

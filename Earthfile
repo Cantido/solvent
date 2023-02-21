@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 VERSION 0.6
 
 ARG ELIXIR_VERSION=1.13
@@ -32,7 +36,8 @@ check:
   FROM +deps
 
   # `git` is required for the `mix_audit` check
-  RUN apk add git
+  # `reuse` adds the `reuse` program for checking the FSFE's Reuse copyright tool
+  RUN apk add git reuse
 
   COPY --dir lib/ test/ guides/ ./
 

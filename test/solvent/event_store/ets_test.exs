@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.EventStore.ETSTest do
   use ExUnit.Case, async: true
   alias Solvent.EventStore.ETS, as: ETSStore

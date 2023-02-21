@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.SourceHandler do
   @moduledoc """
   A module subscriber that handles all events with the source `"subscriber-module-source"`.

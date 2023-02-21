@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.TypeHandler do
   @moduledoc """
   A module subscriber that subscribes to events of type `"typemodulesubscribe.published"`.

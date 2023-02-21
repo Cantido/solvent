@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.Filter.Exact do
   @moduledoc """
   A filter that matches a property with a certain value.

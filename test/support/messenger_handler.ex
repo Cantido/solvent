@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.MessengerHandler do
   @moduledoc """
   A module subscriber that subscribes to the type `"modulesubscribe.published"` and

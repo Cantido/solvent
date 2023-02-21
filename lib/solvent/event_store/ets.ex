@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.EventStore.ETS do
   @moduledoc """
   ETS-based storage for `Solvent.Event` objects.

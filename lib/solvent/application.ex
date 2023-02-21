@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications

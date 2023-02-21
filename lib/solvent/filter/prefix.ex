@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.Filter.Prefix do
   @moduledoc """
   A filter that matches a property beginning with a certain value.

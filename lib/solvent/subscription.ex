@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.Subscription do
   @moduledoc """
   Describes a consumer's wish to receive events, as well as how to deliver them.

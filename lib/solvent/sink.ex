@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defprotocol Solvent.Sink do
   @moduledoc """
   A protocol for delivering events to a target.

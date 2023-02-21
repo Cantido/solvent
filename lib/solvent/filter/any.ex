@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Rosa Richter
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Solvent.Filter.Any do
   @moduledoc """
   A filter that matches when at least one of the given subfilters matches.

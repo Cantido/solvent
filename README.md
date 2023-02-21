@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MIT
+-->
+
 # Solvent
 
 [![CI](https://github.com/Cantido/solvent/actions/workflows/elixir.yml/badge.svg)](https://github.com/Cantido/solvent/actions/workflows/elixir.yml)
