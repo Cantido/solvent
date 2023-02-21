@@ -7,7 +7,7 @@ defmodule SolventTest do
   doctest Solvent
 
   setup do
-    Solvent.SubscriberStore.delete_all()
+    Solvent.SubscriptionStore.delete_all()
     Solvent.EventStore.delete_all()
   end
 
