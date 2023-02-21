@@ -31,6 +31,9 @@ deps:
 check:
   FROM +deps
 
+  # `git` is required for the `mix_audit` check
+  RUN apk add git
+
   COPY --dir lib/ test/ guides/ ./
 
   RUN mix check
