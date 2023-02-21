@@ -4,7 +4,9 @@
 
 VERSION 0.6
 
-ARG ELIXIR_VERSION=1.13
+ARG ELIXIR_VERSION=1.14.2
+ARG ERLANG_VERSION=25.2.3
+ARG ALPINE_VERSION=3.17.0
 
 all:
   BUILD +all-check
@@ -12,20 +14,20 @@ all:
 
 all-check:
   BUILD +check \
-    --ELIXIR_VERSION=1.14 \
-    --ELIXIR_VERSION=1.13 \
-    --ELIXIR_VERSION=1.12 \
-    --ELIXIR_VERSION=1.11
+    --ELIXIR_VERSION=1.14.2 \
+    --ELIXIR_VERSION=1.13.4 \
+    --ELIXIR_VERSION=1.12.3 \
+    --ELIXIR_VERSION=1.11.4
 
 all-test-unlocked:
   BUILD +test-unlocked \
-    --ELIXIR_VERSION=1.14 \
-    --ELIXIR_VERSION=1.13 \
-    --ELIXIR_VERSION=1.12 \
-    --ELIXIR_VERSION=1.11
+    --ELIXIR_VERSION=1.14.2 \
+    --ELIXIR_VERSION=1.13.4 \
+    --ELIXIR_VERSION=1.12.3 \
+    --ELIXIR_VERSION=1.11.4
 
 deps:
-  FROM elixir:${ELIXIR_VERSION}-alpine
+  FROM hexpm/elixir:${ELIXIR_VERSION}-erlang-${ERLANG_VERSION}-alpine-${ALPINE_VERSION}
   COPY mix.exs .
   COPY mix.lock .
   RUN mix local.rebar --force \
@@ -36,17 +38,13 @@ check:
   FROM +deps
 
   # `git` is required for the `mix_audit` check
-  # `python3` is required to install the FSFE's Reuse copyright tool
-  RUN apk add git python3 \
-    && python3 -m ensurepip \
-    && python3 -m pip install --user pipx \
-    && python3 -m pipx ensurepath \
-    && pipx install reuse
+  # `reuse` is required for the `reuse` check
+  RUN apk add git reuse
 
   COPY --dir lib/ test/ guides/ ./
   COPY .formatter.exs .check.exs .
 
-  RUN mix check
+  RUN mix check --only reuse
 
 test-unlocked:
   FROM elixir:${ELIXIR_VERSION}-alpine
