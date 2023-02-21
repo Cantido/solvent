@@ -3,6 +3,10 @@ defmodule Solvent.Filter.Suffix do
   A filter that matches property strings that end with the given value.
   """
 
+  @type t :: %__MODULE__{
+    properties: %{Solvent.Event.property_type() => String.t()}
+  }
+
   defstruct properties: %{}
 
   defimpl Solvent.Filter do

@@ -2,6 +2,10 @@ defmodule Solvent.Filter.Any do
   @moduledoc """
   A filter that matches when at least one of the given subfilters matches.
   """
+
+  @type t :: %__MODULE__{
+    subfilters: [Solvent.Filter.t()]
+  }
   defstruct subfilters: []
 
   defimpl Solvent.Filter do

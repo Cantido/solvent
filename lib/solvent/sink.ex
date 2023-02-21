@@ -11,6 +11,12 @@ defprotocol Solvent.Sink do
 
   """
 
+  @doc """
+  Send an event to a sink with the given listener id.
+
+  Options are accepted to configure details of the delivery.
+  """
+  @spec deliver(Solvent.Sink.t(), Solvent.Event.t(), String.t(), keyword()) :: any()
   def deliver(sink, event, listener_id, protocol_settings \\ [])
 end
 

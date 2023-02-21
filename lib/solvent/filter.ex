@@ -41,5 +41,9 @@ defprotocol Solvent.Filter do
       [not: [exact: [type: "com.example.event"]]]
   """
 
+  @doc """
+  Returns `true` if the given event matches the filter's criteria, `false` otherwise.
+  """
+  @spec match?(Solvent.Filter.t(), Solvent.Event.t()) :: boolean()
   def match?(filter, event)
 end

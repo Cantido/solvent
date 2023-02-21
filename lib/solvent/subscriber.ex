@@ -45,6 +45,12 @@ defmodule Solvent.Subscriber do
       @solvent_filters unquote(Keyword.get(usage_opts, :filters, []))
       @solvent_config unquote(Keyword.get(usage_opts, :config, auto_ack: true))
 
+      @doc """
+      Returns a `Solvent.Subscription` struct describing this module's subscription configuration.
+
+      Options can be passed to this function to override values provided to `use Solvent.Subscriber`.
+      """
+      @spec subscription(keyword()) :: Solvent.Subscription.t()
       def subscription(opts \\ []) do
         sub_opts = Keyword.take(opts, [:id, :sink, :source, :types, :filters, :config])
 
@@ -63,14 +69,24 @@ defmodule Solvent.Subscriber do
         Solvent.Subscription.new({__MODULE__, :handle_event, []}, opts)
       end
 
-      def ack_event(event_id) do
-        Solvent.EventStore.ack(event_id, @solvent_subscription_id)
+      @doc """
+      Acknowledge an event with the given handle.
+
+      This is a shortcut function that has this module's subscription ID set by `use Solvent.Subscriber`.
+      """
+      @spec ack_event(Solvent.Event.handle()) :: :ok
+      def ack_event(event_handle) do
+        Solvent.EventStore.ack(event_handle, @solvent_subscription_id)
       end
     end
   end
 
   @doc """
-  Performs an action when given an event type, event ID, and subscription ID.
+  Performs an action when given an event type, event handle, and subscription ID.
   """
-  @callback handle_event(String.t(), String.t(), String.t()) :: any()
+  @callback handle_event(
+    Solvent.Event.type(),
+    Solvent.Event.handle(),
+    Solvent.Subscription.id()
+  ) :: any()
 end

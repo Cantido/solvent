@@ -2,6 +2,11 @@ defmodule Solvent.Filter.Prefix do
   @moduledoc """
   A filter that matches a property beginning with a certain value.
   """
+
+  @type t :: %__MODULE__{
+    properties: %{Solvent.Event.property_key() => String.t()}
+  }
+
   defstruct properties: %{}
 
   defimpl Solvent.Filter do
