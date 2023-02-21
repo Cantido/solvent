@@ -43,11 +43,16 @@ defmodule Solvent.MixProject do
     [
       {:benchfella, "~> 0.3.0", only: :dev},
       {:cloudevents, "~> 0.6.1"},
-      {:uniq, "~> 0.4"},
+      {:credo, ">= 0.0.0", only: :dev, runtime: false},
+      {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
+      {:doctor, ">= 0.0.0", only: :dev, runtime: false},
+      {:ex_check, "~> 0.14.0", only: :dev, runtime: false},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:jason, "~> 1.3"},
+      {:mix_audit, ">= 0.0.0", only: [:dev], runtime: false},
       {:telemetry, "~> 0.4 or ~> 1.0"},
-      {:telemetry_registry, "~> 0.2 or ~> 0.3"}
+      {:telemetry_registry, "~> 0.2 or ~> 0.3"},
+      {:uniq, "~> 0.4"}
     ]
   end
 end
