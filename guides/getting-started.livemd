@@ -39,10 +39,10 @@ Subscriber invocations also happen inside separate processes, so they are comple
 
 Solvent also sets some Logger metadata for every subscriber process:
 
-* `:solvent_subscriber_id` - the ID of the subscriber being executed
-* `:solvent_event_source` - the source of the event that triggered this subscriber
-* `:solvent_event_id` - the ID of the event that triggered this subscriber
-* `:solvent_event_type` - the type field of the event that triggered this subscriber
+* `:solvent_subscription_id` - the ID of the subscription being executed
+* `:solvent_event_source` - the source of the event that triggered this subscription
+* `:solvent_event_id` - the ID of the event that triggered this subscription
+* `:solvent_event_type` - the type field of the event that triggered this subscription
 
 To use this metadata, configure `:logger`:
 
@@ -109,7 +109,7 @@ The event store also keeps track of event acknowledgements.
 ## Acknowledging an Event
 
 In order for the event store to stay small and quickly-searchable,
-the event store requires that events be acknowledged once the subscriber is done processing.
+the event store requires that events be acknowledged once the subscription is done processing.
 The event store keeps track of acknolwedgements,
 and deletes the event once all subscribers have responded.
 Acknowledge events using the `Solvent.EventStore.ack/2` function.
@@ -152,7 +152,7 @@ And publish to them like normal
 
 Some features of module subscribers:
 
-* The function is subscribed with its module name as the subscriber ID (this can be overridden by providing an `:id` option to the `use` statement)
+* The function is subscribed with its module name as the subscription ID (this can be overridden by providing an `:id` option to the `use` statement)
 * `Solvent.EventStore.ack/2` is automatically called once the `handle_event/2` function returns (this can be disabled using the `auto_ack?: false` option)
 
 ## Event data and the CloudEvents spec

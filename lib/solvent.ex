@@ -6,37 +6,37 @@ defmodule Solvent do
     description: "Emitted when an event is published",
     measurements: "%{}",
     metadata:
-      "%{event_source: String.t(), event_id: String.t(), event_type: String.t(), subscriber_count: non_neg_integer()}"
+      "%{event_source: String.t(), event_id: String.t(), event_type: String.t(), subscription_count: non_neg_integer()}"
   })
 
   telemetry_event(%{
-    event: [:solvent, :subscriber, :processing, :start],
+    event: [:solvent, :subscription, :processing, :start],
     description: "Emitted when a subscriber begins processing an event",
     measurements: "%{}",
     metadata:
-      "%{subscriber_id: String.t(), event_source: String.t(), event_id: String.t(), event_type: String.t()}"
+      "%{subscription_id: String.t(), event_source: String.t(), event_id: String.t(), event_type: String.t()}"
   })
 
   telemetry_event(%{
-    event: [:solvent, :subscriber, :processing, :stop],
+    event: [:solvent, :subscription, :processing, :stop],
     description: "Emitted when a subscriber finishes processing an event",
     measurements: "%{duration: non_neg_integer()}",
     metadata:
-      "%{subscriber_id: String.t(), event_source: String.t(), event_id: String.t(), event_type: String.t()}"
+      "%{subscription_id: String.t(), event_source: String.t(), event_id: String.t(), event_type: String.t()}"
   })
 
   telemetry_event(%{
-    event: [:solvent, :subscriber, :subscribing, :start],
+    event: [:solvent, :subscription, :subscribing, :start],
     description: "Emitted when a subscriber begins subscribing to the event stream",
     measurements: "%{}",
-    metadata: "%{subscriber_id: String.t(), filter: String.t()}"
+    metadata: "%{subscription_id: String.t(), filter: String.t()}"
   })
 
   telemetry_event(%{
-    event: [:solvent, :subscriber, :subscribing, :stop],
+    event: [:solvent, :subscription, :subscribing, :stop],
     description: "Emitted when a subscriber is finished subscribing to the event stream",
     measurements: "%{duration: non_neg_integer()}",
-    metadata: "%{subscriber_id: String.t(), filter: String.t()}"
+    metadata: "%{subscription_id: String.t(), filter: String.t()}"
   })
 
   @moduledoc """
@@ -70,10 +70,10 @@ defmodule Solvent do
   """
   def subscribe(%Subscription{} = sub) do
     :telemetry.span(
-      [:solvent, :subscriber, :subscribing],
-      %{subscriber_id: sub.id, filter: sub.filters},
+      [:solvent, :subscription, :subscribing],
+      %{subscription_id: sub.id, filter: sub.filters},
       fn ->
-        :ok = Solvent.SubscriberStore.insert(sub)
+        :ok = Solvent.SubscriptionStore.insert(sub)
         {:ok, %{}}
       end
     )
@@ -98,7 +98,7 @@ defmodule Solvent do
 
   This function shares its signature with `Solvent.Subscription.new/2`,
   and creates a `Solvent.Subscription` in the same way,
-  while also inserting the subscription into the `Solvent.SubscriberStore` so that the sink will begin to receive events.
+  while also inserting the subscription into the `Solvent.SubscriptionStore` so that the sink will begin to receive events.
 
   Sinks are given an event _identifier_, and _not_ the event itself.
   Your sink must fetch the full event from the `Solvent.EventStore`, so that extra data is not copied between processes.
@@ -129,7 +129,7 @@ defmodule Solvent do
   Remove a subscriber.
   """
   def unsubscribe(id) do
-    Solvent.SubscriberStore.delete(id)
+    Solvent.SubscriptionStore.delete(id)
   end
 
   @doc """
@@ -169,11 +169,12 @@ defmodule Solvent do
 
   def publish(event, _opts) do
     Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-      subscribers = Solvent.SubscriberStore.listeners_for(event)
-      subscriber_ids = Enum.map(subscribers, & &1.id) |> Enum.uniq()
+      subscriptions = Solvent.SubscriptionStore.subscriptions_for(event)
+      subscription_ids = Enum.map(subscriptions, & &1.id) |> Enum.uniq()
 
       Logger.debug(
-        "Publishing event #{event.id}, (#{event.type}). Subscribers are: #{inspect(subscriber_ids, pretty: true)}"
+        event: event,
+        subscriptions: subscriptions
       )
 
       :telemetry.execute(
@@ -183,26 +184,26 @@ defmodule Solvent do
           event_source: event.source,
           event_id: event.id,
           event_type: event.type,
-          subscriber_count: Enum.count(subscribers)
+          subscription_count: Enum.count(subscriptions)
         }
       )
 
-      if Enum.count(subscribers) > 0 do
-        :ok = Solvent.EventStore.insert(event, subscriber_ids)
+      if Enum.count(subscriptions) > 0 do
+        :ok = Solvent.EventStore.insert(event, subscription_ids)
 
         notifier_fun = fn subscription ->
           Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
             :telemetry.span(
-              [:solvent, :subscriber, :processing],
+              [:solvent, :subscription, :processing],
               %{
-                subscriber_id: subscription.id,
+                subscription: subscription.id,
                 event_source: event.source,
                 event_id: event.id,
                 event_type: event.type
               },
               fn ->
                 Logger.metadata(
-                  solvent_subscriber_id: subscription.id,
+                  solvent_subscription_id: subscription.id,
                   solvent_event_source: event.source,
                   solvent_event_id: event.id,
                   solvent_event_type: event.type
@@ -222,13 +223,13 @@ defmodule Solvent do
           end)
         end
 
-        Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscribers, notifier_fun,
+        Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscriptions, notifier_fun,
           timeout: :infinity
         )
         |> Stream.run()
       else
         Logger.warn(
-          "No subscribers matched event type #{event.type}. Solvent will not insert the event into the event store."
+          "No subscriptions matched event type #{event.type}. Solvent will not insert the event into the event store."
         )
       end
     end)

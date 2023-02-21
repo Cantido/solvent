@@ -1,11 +1,11 @@
-defmodule Solvent.SubscriberStore do
+defmodule Solvent.SubscriptionStore do
   @moduledoc """
   Stores `Solvent.Subscription` structs in ETS.
   """
 
   alias Solvent.Subscription
 
-  @table_name :solvent_listeners
+  @table_name :solvent_subscriptions
 
   @doc """
   Create the ETS tables that store subscriptions.
@@ -48,11 +48,11 @@ defmodule Solvent.SubscriberStore do
   @doc """
   Returns a stream of all subscriptions in the store that match the given event.
   """
-  @spec listeners_for(Solvent.Event.t()) :: Enumerable.t()
-  def listeners_for(event) do
-    listeners = :ets.tab2list(@table_name)
+  @spec subscriptions_for(Solvent.Event.t()) :: Enumerable.t()
+  def subscriptions_for(event) do
+    subscriptions = :ets.tab2list(@table_name)
 
-    Task.Supervisor.async_stream(Solvent.TaskSupervisor, listeners, fn {_id, sub} ->
+    Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscriptions, fn {_id, sub} ->
       if Subscription.match?(sub, event) do
         sub
       end

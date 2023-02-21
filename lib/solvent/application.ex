@@ -8,7 +8,7 @@ defmodule Solvent.Application do
   @impl true
   def start(_type, _args) do
     Solvent.EventStore.init()
-    Solvent.SubscriberStore.init()
+    Solvent.SubscriptionStore.init()
 
     children = [
       # Starts a worker by calling: Solvent.Worker.start_link(arg)
