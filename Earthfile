@@ -38,8 +38,9 @@ check:
   # `git` is required for the `mix_audit` check
   # `python3` is required to install the FSFE's Reuse copyright tool
   RUN apk add git python3 \
+    && python3 -m ensurepip \
     && python3 -m pip install --user pipx \
-    && python3 -m pipx insurepath \
+    && python3 -m pipx ensurepath \
     && pipx install reuse
 
   COPY --dir lib/ test/ guides/ ./
