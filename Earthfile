@@ -31,7 +31,7 @@ deps:
 check:
   FROM +deps
 
-  COPY --dir lib/ test/ ./
+  COPY --dir lib/ test/ guides/ ./
 
   RUN mix check
 
