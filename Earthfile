@@ -33,7 +33,7 @@ check:
 
   COPY --dir lib/ test/ ./
 
-  RUN mix test
+  RUN mix check
 
 test-unlocked:
   FROM elixir:${ELIXIR_VERSION}-alpine
