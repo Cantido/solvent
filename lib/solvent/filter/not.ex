@@ -4,8 +4,8 @@ defmodule Solvent.Filter.Not do
   """
 
   @type t :: %__MODULE__{
-    subfilter: Solvent.Filter.t()
-  }
+          subfilter: Solvent.Filter.t()
+        }
 
   defstruct [:subfilter]
 

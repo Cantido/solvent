@@ -4,8 +4,8 @@ defmodule Solvent.Filter.All do
   """
 
   @type t :: %__MODULE__{
-    subfilters: [Solvent.Filter.t()]
-  }
+          subfilters: [Solvent.Filter.t()]
+        }
 
   defstruct subfilters: []
 

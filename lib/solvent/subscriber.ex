@@ -85,8 +85,8 @@ defmodule Solvent.Subscriber do
   Performs an action when given an event type, event handle, and subscription ID.
   """
   @callback handle_event(
-    Solvent.Event.type(),
-    Solvent.Event.handle(),
-    Solvent.Subscription.id()
-  ) :: any()
+              Solvent.Event.type(),
+              Solvent.Event.handle(),
+              Solvent.Subscription.id()
+            ) :: any()
 end

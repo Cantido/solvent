@@ -3,11 +3,9 @@ defmodule Solvent.Filter.Exact do
   A filter that matches a property with a certain value.
   """
 
-
-
   @type t :: %__MODULE__{
-    properties: %{Solvent.Event.property_key() => String.t()}
-  }
+          properties: %{Solvent.Event.property_key() => String.t()}
+        }
   defstruct properties: %{}
 
   defimpl Solvent.Filter do

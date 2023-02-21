@@ -13,16 +13,16 @@ defmodule Solvent.Event do
   @type type :: String.t()
   @type handle :: {source(), id()}
   @type property_key ::
-    :specversion |
-    :id |
-    :source |
-    :type |
-    :time |
-    :subject |
-    :data |
-    :datacontenttype |
-    :dataschema |
-    String.t()
+          :specversion
+          | :id
+          | :source
+          | :type
+          | :time
+          | :subject
+          | :data
+          | :datacontenttype
+          | :dataschema
+          | String.t()
   @type property_value :: any()
 
   @doc """

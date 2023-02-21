@@ -10,14 +10,15 @@ defmodule Solvent.Subscription do
 
   @type id :: String.t()
 
-  @type t :: %__MODULE__ {
-    id: id(),
-    sink: Solvent.Sink.t(),
-    source: Solvent.Event.source(),
-    filters: [Solvent.Filter.t()],
-    types: [Solvent.Event.type()],
-    config: keyword()
-  }
+  @type t ::
+          %__MODULE__{
+            id: id(),
+            sink: Solvent.Sink.t(),
+            source: Solvent.Event.source(),
+            filters: [Solvent.Filter.t()],
+            types: [Solvent.Event.type()],
+            config: keyword()
+          }
 
   @enforce_keys [:id, :sink]
   defstruct [
