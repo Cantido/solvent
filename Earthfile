@@ -39,10 +39,11 @@ check:
   # `reuse` is required for the `reuse` check
   RUN apk add git reuse
 
-  COPY --dir lib/ test/ guides/ ./
+  # `reuse` needs to detect VCS, so we must move .git for this check
+  COPY --dir lib/ test/ guides/ .git ./
   COPY .formatter.exs .check.exs .
 
-  RUN mix check --only reuse
+  RUN mix check
 
 test-unlocked:
   FROM elixir:${ELIXIR_VERSION}-alpine
