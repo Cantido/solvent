@@ -172,73 +172,74 @@ defmodule Solvent do
   end
 
   def publish(event, _opts) do
-    Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-      subscriptions = Solvent.SubscriptionStore.subscriptions_for(event)
-      subscription_ids = Enum.map(subscriptions, & &1.id) |> Enum.uniq()
-
-      Logger.debug(
-        event: event,
-        subscriptions: subscriptions
-      )
-
-      :telemetry.execute(
-        [:solvent, :event, :published],
-        %{},
-        %{
-          event_source: event.source,
-          event_id: event.id,
-          event_type: event.type,
-          subscription_count: Enum.count(subscriptions)
-        }
-      )
-
-      if Enum.count(subscriptions) > 0 do
-        :ok = Solvent.EventStore.insert(event, subscription_ids)
-
-        notifier_fun = fn subscription ->
-          Task.Supervisor.start_child(Solvent.TaskSupervisor, fn ->
-            :telemetry.span(
-              [:solvent, :subscription, :processing],
-              %{
-                subscription: subscription.id,
-                event_source: event.source,
-                event_id: event.id,
-                event_type: event.type
-              },
-              fn ->
-                Logger.metadata(
-                  solvent_subscription_id: subscription.id,
-                  solvent_event_source: event.source,
-                  solvent_event_id: event.id,
-                  solvent_event_type: event.type
-                )
-
-                Solvent.Sink.deliver(subscription.sink, event, subscription.id)
-
-                if Keyword.get(subscription.config, :auto_ack, false) do
-                  Solvent.EventStore.ack({event.source, event.id}, subscription.id)
-                end
-
-                {:ok, %{}}
-              end
-            )
-
-            :ok
-          end)
-        end
-
-        Task.Supervisor.async_stream(Solvent.TaskSupervisor, subscriptions, notifier_fun,
-          timeout: :infinity
-        )
-        |> Stream.run()
-      else
-        Logger.warn(
-          "No subscriptions matched event type #{event.type}. Solvent will not insert the event into the event store."
-        )
-      end
-    end)
+    Task.Supervisor.start_child(Solvent.TaskSupervisor, fn -> do_publish(event) end)
 
     {:ok, {event.source, event.id}}
+  end
+
+  defp do_publish(event) do
+    subscriptions = Solvent.SubscriptionStore.subscriptions_for(event)
+    subscription_ids = Enum.map(subscriptions, & &1.id) |> Enum.uniq()
+
+    Logger.debug(
+      event: event,
+      subscriptions: subscriptions
+    )
+
+    :telemetry.execute(
+      [:solvent, :event, :published],
+      %{},
+      %{
+        event_source: event.source,
+        event_id: event.id,
+        event_type: event.type,
+        subscription_count: Enum.count(subscriptions)
+      }
+    )
+
+    if Enum.count(subscriptions) > 0 do
+      :ok = Solvent.EventStore.insert(event, subscription_ids)
+    else
+      Logger.warn(
+        "No subscriptions matched event type #{event.type}. Solvent will not insert the event into the event store."
+      )
+    end
+
+    Task.Supervisor.async_stream(
+      Solvent.TaskSupervisor,
+      subscriptions,
+      &notify(&1, event),
+      timeout: :infinity
+    )
+    |> Stream.run()
+  end
+
+  defp notify(subscription, event) do
+    :telemetry.span(
+      [:solvent, :subscription, :processing],
+      %{
+        subscription: subscription.id,
+        event_source: event.source,
+        event_id: event.id,
+        event_type: event.type
+      },
+      fn ->
+        # credo:disable-for-next-line Credo.Check.Warning.MissedMetadataKeyInLoggerConfig
+        Logger.metadata(
+          solvent_subscription_id: subscription.id,
+          solvent_event_source: event.source,
+          solvent_event_id: event.id,
+          solvent_event_type: event.type
+        )
+
+        Solvent.Sink.deliver(subscription.sink, event, subscription.id)
+
+        if Keyword.get(subscription.config, :auto_ack, false) do
+          Solvent.EventStore.ack({event.source, event.id}, subscription.id)
+        end
+
+        {:ok, %{}}
+      end)
   end
 
   def build_filters(filters) when is_list(filters) do
