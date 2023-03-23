@@ -9,11 +9,12 @@ ARG ERLANG_VERSION=24.3.4.8
 ARG ALPINE_VERSION=3.17.0
 
 all:
-  BUILD +all-check
+  BUILD +all-test
+  BUILD +check
   BUILD +all-test-unlocked
 
-all-check:
-  BUILD +check \
+all-test:
+  BUILD +test \
     --ELIXIR_VERSION=1.14.2 \
     --ELIXIR_VERSION=1.13.4 \
     --ELIXIR_VERSION=1.12.3
@@ -43,7 +44,15 @@ check:
   COPY --dir lib/ test/ guides/ .git ./
   COPY .formatter.exs .check.exs .
 
-  RUN mix check
+  RUN mix check --except test
+
+test:
+  FROM +deps
+
+  COPY --dir lib/ test/ ./
+
+  RUN mix test
+end
 
 test-unlocked:
   FROM elixir:${ELIXIR_VERSION}-alpine
