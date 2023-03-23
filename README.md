@@ -42,7 +42,7 @@ Solvent.subscribe(
 )
 
 # module-function-args tuples
-Solvent.subscribe
+Solvent.subscribe(
   {IO, :inspect, []},
   source: "https://myapp.example.com",
   types: ["com.myevent.published"]
