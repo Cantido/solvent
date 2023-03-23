@@ -9,8 +9,9 @@ ARG ERLANG_VERSION=24.3.4.8
 ARG ALPINE_VERSION=3.17.0
 
 all:
-  BUILD +all-test
   BUILD +check
+  BUILD +reuse
+  BUILD +all-test
   BUILD +all-test-unlocked
 
 all-test:
@@ -44,7 +45,16 @@ check:
   COPY --dir lib/ test/ guides/ .git ./
   COPY .formatter.exs .check.exs .
 
-  RUN mix check --except test
+  RUN mix check --except test --except reuse
+
+reuse:
+  FROM fsfe/reuse
+
+  COPY mix.exs mix.lock mix.lock.license ./
+  COPY --dir lib/ test/ guides/ LICENSES/ .git ./
+  COPY .formatter.exs .check.exs .
+
+  RUN reuse lint
 
 test:
   FROM +deps
