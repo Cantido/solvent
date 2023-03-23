@@ -65,6 +65,8 @@ defmodule Solvent do
 
   """
 
+  alias Solvent.Event
+  alias Solvent.Sink
   alias Solvent.Subscription
 
   require Logger
@@ -119,7 +121,7 @@ defmodule Solvent do
 
   You can also create a `Solvent.Subscription` struct yourself, and pass it to `subscribe/1`.
   """
-  @spec subscribe(sink(), Keyword.t()) :: :ok
+  @spec subscribe(sink(), Keyword.t()) :: {:ok, Subscription.id()}
   def subscribe(sink, opts \\ [])
 
   def subscribe(module, opts) when is_atom(module) and is_list(opts) do

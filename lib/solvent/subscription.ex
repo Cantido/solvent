@@ -10,17 +10,19 @@ defmodule Solvent.Subscription do
   and then give that struct to `Solvent.subscribe/1` to being receiving events.
   """
 
+  alias Solvent.Event
   alias Solvent.Filter
+  alias Solvent.Sink
 
   @type id :: String.t()
 
   @type t ::
           %__MODULE__{
             id: id(),
-            sink: Solvent.Sink.t(),
-            source: Solvent.Event.source(),
-            filters: [Solvent.Filter.t()],
-            types: [Solvent.Event.type()],
+            sink: Sink.t(),
+            source: Event.source(),
+            filters: [Filter.t()],
+            types: [Event.type()],
             config: keyword()
           }
 
