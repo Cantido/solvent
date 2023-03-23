@@ -239,7 +239,8 @@ defmodule Solvent do
         end
 
         {:ok, %{}}
-      end)
+      end
+    )
   end
 
   def build_filters(filters) when is_list(filters) do
