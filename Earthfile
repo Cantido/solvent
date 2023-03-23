@@ -52,7 +52,6 @@ test:
   COPY --dir lib/ test/ ./
 
   RUN mix test
-end
 
 test-unlocked:
   FROM elixir:${ELIXIR_VERSION}-alpine
