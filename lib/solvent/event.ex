@@ -28,6 +28,15 @@ defmodule Solvent.Event do
           | :dataschema
           | String.t()
   @type property_value :: any()
+  @type new_option ::
+          {:specversion, String.t()}
+          | {:source, source()}
+          | {:time, DateTime.t()}
+          | {:subject, String.t()}
+          | {:data, any()}
+          | {:datacontenttype, String.t()}
+          | {:dataschema, String.t()}
+  @type new_options :: [new_option()]
 
   @doc """
   Create a new event.
@@ -47,6 +56,7 @@ defmodule Solvent.Event do
     - `:time` - a timestamp for when the event occurred. Default: `DateTime.utc_now()` at struct creation time.
     - `:extensions` - a map of additional properties. Default: `%{}`
   """
+  @spec new(type(), new_options()) :: t()
   def new(type, opts \\ []) do
     %{
       specversion: "1.0",

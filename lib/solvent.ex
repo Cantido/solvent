@@ -69,9 +69,13 @@ defmodule Solvent do
 
   require Logger
 
+  @type sink :: module() | Sink.t()
+  @type event_or_type :: Event.t() | Event.type()
+
   @doc """
   Subscribe to the event stream with a pre-made `Solvent.Subscription` struct.
   """
+  @spec subscribe(Subscription.t()) :: {:ok, Subscription.id()}
   def subscribe(%Subscription{} = sub) do
     :telemetry.span(
       [:solvent, :subscription, :subscribing],
@@ -115,6 +119,7 @@ defmodule Solvent do
 
   You can also create a `Solvent.Subscription` struct yourself, and pass it to `subscribe/1`.
   """
+  @spec subscribe(sink(), Keyword.t()) :: :ok
   def subscribe(sink, opts \\ [])
 
   def subscribe(module, opts) when is_atom(module) and is_list(opts) do
@@ -132,6 +137,7 @@ defmodule Solvent do
   @doc """
   Remove a subscriber.
   """
+  @spec unsubscribe(Subscription.id()) :: :ok
   def unsubscribe(id) do
     Solvent.SubscriptionStore.delete(id)
   end
@@ -164,6 +170,7 @@ defmodule Solvent do
 
   You can also build an event yourself with `Solvent.Event.new/1` and publish it with this function.
   """
+  @spec publish(event_or_type(), Keyword.t()) :: {:ok, Event.handle()}
   def publish(event, opts \\ [])
 
   def publish(type, opts) when is_binary(type) do
@@ -243,6 +250,10 @@ defmodule Solvent do
     )
   end
 
+  @doc """
+  Build a `Solvent.Filter` struct from a nested keyword list of filters.
+  """
+  @spec build_filters(Keyword.t()) :: Solvent.Filter.t()
   def build_filters(filters) when is_list(filters) do
     Enum.map(filters, &build_filter/1)
   end

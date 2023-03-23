@@ -139,6 +139,7 @@ defmodule Solvent.EventStore.ETS do
   - `:all_deleted` - sent when the event store is cleared.
   - `{:acked, event_handle, subscription_id}` - sent when a subscriber acknowledges an event.
   """
+  @spec debug_subscribe(pid()) :: :ok
   def debug_subscribe(pid) do
     true = :ets.insert(@debug_subscribers_table, {pid})
     :ok
@@ -148,6 +149,7 @@ defmodule Solvent.EventStore.ETS do
   Remove a process from the list of debug subscribers.
   The given process will no longer receive messages when the event store changes.
   """
+  @spec debug_unsubscribe(pid()) :: :ok
   def debug_unsubscribe(pid) do
     true = :ets.match_delete(@debug_subscribers_table, {pid})
     :ok

@@ -78,6 +78,7 @@ defmodule Solvent.Subscription do
   - `:auto_ack` - Tell Solvent to automatically acknoledge the event once it is done delivering the event to the sink.
     Do not set this to `true` if you pass off the event ID to be fetched by another process.
   """
+  @spec new(Sink.t(), Keyword.t()) :: t()
   def new(sink, opts \\ []) do
     id = Keyword.get(opts, :id, Uniq.UUID.uuid7())
     source = Keyword.get(opts, :source)
@@ -139,6 +140,7 @@ defmodule Solvent.Subscription do
   @doc """
   Test if a subscription should deliver a certain event.
   """
+  @spec match?(t(), Event.t()) :: boolean()
   def match?(subscription, event) do
     source_match?(subscription.source, event) and
       filter_match?(subscription.filters, event) and
